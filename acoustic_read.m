@@ -14,9 +14,9 @@ end
 
 datayear = 18;
 
-datamonth = 05;
-dataday = 28;
-endfile = '170423';
+% datamonth = 05;
+% dataday = 28;
+% endfile = '170423';
 
 % datamonth = 05;
 % dataday = 28;
@@ -26,9 +26,9 @@ endfile = '170423';
 % dataday = 08;
 % endfile = '175209';
 
-%datamonth = 05;
-%dataday = 09;
-%endfile = '134903';
+datamonth = 05;
+dataday = 09;
+endfile = '134903';
 
 %datamonth = 04;
 %dataday = 19;
@@ -196,8 +196,8 @@ clearvars dataInit2 dataInit3
 
 %% load selected source receiver pair for all acquisition sequences
 % select pair
-jj = 2; % receiver number
-kk = 2; % source number
+jj = 6; % receiver number
+kk = 6; % source number
 % load data from bin files and DC filter it too
 dataPair = zeros(ns,nq);
 dataPairFilt = zeros(size(dataPair));
@@ -290,7 +290,7 @@ Trans = ((1-rff^2)*exp(-1i*alpha))./(1-rff^2*exp(-2*1i*alpha));
 % objective function
 Fun = zeros(nq,length(h));
 % ref waveform
-iiref = 1;
+iiref = 3;
 for ii = 1:nq
     Fun(ii,:) = sum(abs((U(flow:fhigh,ii)*ones(size(h))-(U(flow:fhigh,iiref)...
         *ones(size(h)).*Trans)).^2),1);
@@ -313,6 +313,18 @@ end
 xlabel('Thickness (\mum)')
 ylabel('Objective function')
 legend({' num2str(ii)'})
+
+%%
+badindex = [3 11 14 16 18 20 22 41 43 45 47 66 68 74 87 94 106 108 114 227 ...
+    238 247 248 254 256 281 283 289 308 316 318 322 325 328 330 340 341 345 ...
+    347:358 361:363 370 372:389 390 391 427 428 454 455 463 467 471 484 486];
+
+%hminfixed = hmin;
+hminfixed(badindex) = hmin(badindex);
+
+figure, plot(AcqTime(1:end),h(hminfixed)*1E6)
+xlabel('Acquisition time')
+ylabel('Fluid layer thickness (\mum)')
 
 %% thickness estimation for all raypaths normal to the fracture plane (vertical)
 % define source-receiver paris to consider
@@ -353,12 +365,12 @@ legend(cellstr(num2str(SRpairs','%d')));
 
 %% add events to plot
 % define times // for 2018-05-28 data
-EventTimes = datetime({'14:22:00','14:36:00','14:45:00','14:50:00',...
-    '15:55:50','16:11:40','16:25:52','16:50:30'},'Format','HH:mm:ss');
+% EventTimes = datetime({'14:22:00','14:36:00','14:45:00','14:50:00',...
+%     '15:55:50','16:11:40','16:25:52','16:50:30'},'Format','HH:mm:ss');
 
 % define times// for 2018-05-09 data
-%EventTimes = datetime({'10:00:00','10:10:00','10:14:00','10:30:00',...
-%    '11:30:00','11:55:00','12:22:00'},'Format','HH:mm:ss');
+EventTimes = datetime({'10:00:00','10:10:00','10:14:00','10:30:00',...
+   '11:30:00','11:55:00','12:22:00'},'Format','HH:mm:ss');
 
 EventTimes.Year = 2000+datayear;
 EventTimes.Month = datamonth;
