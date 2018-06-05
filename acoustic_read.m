@@ -3,20 +3,26 @@ clearvars
 home
 
 %% data path on ENACDrives
-if isunix
+if ismac
+    [~, username] = system('whoami');
+    datapath = ['/Users/' username(1:end-1) '/ENACdrives/gel_on_enac1files/'...
+        'research/Experiments/HF-Experiments/GEL-data/'];
+elseif isunix
     [~, uid] = system('id -u');
     [~, username] = system('whoami');
     datapath = ['/run/user/' uid(1:end-1) '/gvfs/smb-share:domain=INTRANET,server=enac1files.epfl.ch,'...
     'share=gel,user=' username(1:end-1) '/research/Experiments/HF-Experiments/GEL-data/'];
 elseif ispc
     datapath = 'Y:/research/Experiments/HF-Experiments/GEL-data/';
+else
+    disp('Platform not supported')
 end
 
 datayear = 18;
 
-% datamonth = 05;
-% dataday = 28;
-% endfile = '170423';
+datamonth = 05;
+dataday = 28;
+endfile = '170423';
 
 % datamonth = 05;
 % dataday = 28;
@@ -26,9 +32,9 @@ datayear = 18;
 % dataday = 08;
 % endfile = '175209';
 
-datamonth = 05;
-dataday = 09;
-endfile = '134903';
+% datamonth = 05;
+% dataday = 09;
+% endfile = '134903';
 
 %datamonth = 04;
 %dataday = 19;
@@ -147,7 +153,7 @@ clearvars datatmp datafilt
 
 %% plot them
 % time plot
-jj = 4;
+jj = 3; % source-receiver pair
 figure
 disp('plotting source-receiver amplitude over time')
 plot(T*1E6,dataInit2(:,:,jj,jj),T*1E6,dataInit3(:,:,jj,jj))
@@ -156,7 +162,7 @@ ylabel('Amplitude (a.u.)')
 title(['source-receiver #' num2str(jj)])
 
 % image plot
-kk = 4;
+kk = 4; % source number
 figure, imagesc(0:nr-1,T*1E6,squeeze(dataInit3(1,:,:,kk)))
 disp('plotting source #4 over time')
 caxis([-1 1]*0.002)
@@ -275,8 +281,10 @@ axis([0 2 0 2E-3])
 % experimental constants
 rho_plexi = 1180;   % density PMMA
 v_plexi = 2790;     % velocity PMMA
-rho_glycerol = 1260;% density glycerol
-v_glycerol = 1960;  % velocity glycerol
+rho_glycerol = 1260;% density glycerol (from paper)
+v_glycerol = 1960;  % velocity glycerol (from paper)
+rho_cement = 2000;  % density cement (from measurement with Lionel Sofia)
+v_cement = 4600;    % velocity cement (crude estimate from first arrival)
 % choose the right solid and fluid properties
 solid = 'plexi';
 fluid = 'glycerol';
