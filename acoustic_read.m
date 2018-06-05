@@ -81,6 +81,7 @@ Pressure = [6000*CellTimes{2} 6000*CellTimes{3}]; % pressure in MPa
 
 % plot both pressures in time
 figure
+disp('plotting pressure over time')
 plot(PressureTime,Pressure*1E-3) % change to MPa
 axis([datenum([PressureTime(1) PressureTime(end)]) 0 20])
 xlabel('Time')
@@ -88,6 +89,7 @@ ylabel('Pressure (MPa)')
 
 % difference between two gauges
 figure
+disp('plotting gauges difference')
 plot(PressureTime,Pressure(:,2)-Pressure(:,1))
 axis([datenum([PressureTime(1) PressureTime(end)]) [-1 1]*100])
 xlabel('Time')
@@ -147,6 +149,7 @@ clearvars datatmp datafilt
 % time plot
 jj = 4;
 figure
+disp('plotting source-receiver amplitude over time')
 plot(T*1E6,dataInit2(:,:,jj,jj),T*1E6,dataInit3(:,:,jj,jj))
 xlabel('Time (\mus)')
 ylabel('Amplitude (a.u.)')
@@ -155,6 +158,7 @@ title(['source-receiver #' num2str(jj)])
 % image plot
 kk = 4;
 figure, imagesc(0:nr-1,T*1E6,squeeze(dataInit3(1,:,:,kk)))
+disp('plotting source #4 over time')
 caxis([-1 1]*0.002)
 colormap('jet')
 colorbar
@@ -171,6 +175,7 @@ clearvars D
 
 % check all on-axis pairs
 figure
+disp('plotting all on-axis pairs')
 plot(T*1E6,Dd)
 
 % remove excitation noise
@@ -179,6 +184,7 @@ endnoise = 100;
 N = sqrt(sum(Dd(endnoise:end,:).^2,1));
 % plot L2 norm strength
 figure
+disp('plotting plot L2 norm strength')
 bar(1:nr,N)
 axis([0.5 nr+0.5 0 max(N)])
 xlabel('Source-receiver pair')
@@ -216,6 +222,7 @@ plot(T*1E6,dataPair)
 %% analyze waveform changes from fluid layer
 % quick figure for selected source-receiver pair
 figure
+disp('plotting figure for selected source-receiver pair')
 plot(T*1E6,dataPair)
 axis([80 120 [-1 1]*5E-1])
 xlabel('Time (\mus)')
@@ -231,6 +238,7 @@ dataLowFilt = filtfilt(b,a,dataPair);
 % quick figure
 kk = 226:228;
 figure
+disp('plotting next figure for selected source-receiver pair')
 plot(T*1E6,dataLowFilt(:,kk))
 axis([40 80 [-1 1]*1E-1])
 %axis([88 112 [-1 1]*5E-1])
@@ -241,7 +249,9 @@ legend(celllgd{kk})
 
 % max as function of time
 ampmax = max(abs(hilbert(dataLowFilt)));
-figure, plot(AcqTime, ampmax,'o-')
+figure
+disp('plotting max amplitude of time')
+plot(AcqTime, ampmax,'o-')
 axis([datenum([AcqTime(1) AcqTime(end)]) [0 8]*1E-1])
 xlabel('Acquisition time')
 ylabel('Max Amplitude (a.u.)')
@@ -255,6 +265,7 @@ freq = Fn*linspace(0,1,nfft/2+1)';
 
 % graphical check
 figure
+disp('plotting frequency vs amplitude')
 plot(freq*1E-6,abs(U))
 xlabel('Frequency (MHz)')
 ylabel('Amplitude (a.u.)')
@@ -298,7 +309,9 @@ end
 
 % locate min
 [~, hmin] = min(Fun,[],2);
-figure, plot(AcqTime(1:end),h(hmin)*1E6)
+figure
+disp('plotting fluid layer thikness vs time')
+plot(AcqTime(1:end),h(hmin)*1E6)
 xlabel('Acquisition time')
 ylabel('Fluid layer thickness (\mum)')
 axis([datenum([AcqTime(1) AcqTime(end)]) [-1 1]*200])
@@ -357,7 +370,9 @@ end
 
 %% locate and plot estimated thicknesses from min of objective function
 [~, hmin] = min(Fun,[],3);
-figure, plot(AcqTime(1:end),h(hmin)*1E6)
+figure
+disp('plotting fluid layer thickness vs time (2)')
+plot(AcqTime(1:end),h(hmin)*1E6)
 xlabel('Acquisition time')
 ylabel('Fluid layer thickness (\mum)')
 axis([datenum([AcqTime(1) AcqTime(end)]) [-2.5 0.5]*100])
