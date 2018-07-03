@@ -3,45 +3,29 @@ clearvars
 home
 
 %% data path on ENACDrives
-if ismac
-    [~, username] = system('whoami');
-    datapath = ['/Users/' username(1:end-1) '/ENACdrives/gel_on_enac1files/'...
-        'research/Experiments/HF-Experiments/GEL-data/'];
-elseif isunix
-    [~, uid] = system('id -u');
-    [~, username] = system('whoami');
-    datapath = ['/run/user/' uid(1:end-1) '/gvfs/smb-share:domain=INTRANET,server=enac1files.epfl.ch,'...
-    'share=gel,user=' username(1:end-1) '/research/Experiments/HF-Experiments/GEL-data/'];
-elseif ispc
-    datapath = 'Y:/research/Experiments/HF-Experiments/GEL-data/';
-else
-    disp('Platform not supported')
-end
+datapath = pathbyarchitecture;
 
+% 2018 acquisitions
 datayear = 18;
 
-datamonth = 05;
-dataday = 28;
-endfile = '170423';
+datamonth = 06; dataday = 05; endfile = '175813'; % test acquisition cement block C
 
-% datamonth = 05;
-% dataday = 28;
-% endfile = '100142';
+%datamonth = 05; dataday = 28; endfile = '170423'; % 
 
-% datamonth = 05;
-% dataday = 08;
-% endfile = '175209';
+%datamonth = 05; dataday = 28; endfile = '100142'; % 
 
-% datamonth = 05;
-% dataday = 09;
-% endfile = '134903';
+%datamonth = 05; dataday = 08; endfile = '175209'; % test PMMA half blocks
 
-%datamonth = 04;
-%dataday = 19;
-%endfile = '211411';
+%datamonth = 05; dataday = 09; endfile = '134903'; % injection PMMA half blocks
 
-%datafold = '18-04-26/';
-%endfile = 132320;
+%datamonth = 04; dataday = 19; endfile = '211411'; % injection in cement block A
+
+%datamonth = 03; dataday = 26; endtime = '163010'; % acquisition test on aluminium block
+
+% 2017 acquisitions
+%datayear = 17;
+
+%datamonth = 11; dataday = 09; endtime = '121428'; % static test on single PMMA half block, ONLY 16 CHNLS
 
 % build datafold from date
 datafold = [num2str(datayear,'%02d') '-' num2str(datamonth,'%02d') '-' ...
@@ -51,39 +35,35 @@ if ~exist([datapath datafold],'dir')
     error('acoustic_read:datafolder','The data folder does not exist')
 end
 % error if timing and params files not found
-if ~exist([datapath datafold 'params_' num2str(endfile) '.txt'],'file')
+if ~exist([datapath datafold 'params_' num2str(endtime) '.txt'],'file')
     error('acoustic_read:params','The params file does not exist')
 end
-if ~exist([datapath datafold 'timing_' num2str(endfile) '.txt'],'file')
+if ~exist([datapath datafold 'timing_' num2str(endtime) '.txt'],'file')
     error('acoustic_read:params','The timing file does not exist')
 end
 
 % extract timestamp list
-fid = fopen([datapath datafold 'timing_' num2str(endfile) '.txt'],'r');
+fid = fopen([datapath datafold 'timing_' num2str(endtime) '.txt'],'r');
 CellTimes = textscan(fid,'%s');
 fclose(fid);
-AcqTime = datetime(CellTimes{1},'Format','HH:mm:ss');  % time in HH:mm:ss
-AcqTime.Year = 2000+datayear;
-AcqTime.Month = datamonth;
-AcqTime.Day = dataday;
+AcqTime = timestamps(CellTimes{1},datayear,datamonth,dataday);
+
 % filenum list
 tmp = datevec(AcqTime);
 filenum  = tmp(:,4)*10000+tmp(:,5)*100+tmp(:,6);
 
 % get first acquisition time
-[~, ~, ~, HH, mm, ss,] = datevec(datetime(CellTimes{1}{1}));
-startfile = HH*1E4+mm*1E2+ss;
+startfile = tmp(1,4)*1E4+tmp(1,5)*1E2+tmp(1,6);
+
+clearvars tmp
 
 %% pressure profile
 % load pressure data from two pressure gauges
-fid = fopen([datapath datafold 'voltage_' num2str(endfile) '.txt'],'r');
+fid = fopen([datapath datafold 'voltage_' num2str(endtime) '.txt'],'r');
 CellTimes = textscan(fid,'%s %f %f');
 fclose(fid);
-PressureTime = datetime(CellTimes{1},'Format','HH:mm:ss');  % time in HH:mm:ss
-PressureTime.Year = 2000+datayear;
-PressureTime.Month = datamonth;
-PressureTime.Day = dataday;
-Pressure = [6000*CellTimes{2} 6000*CellTimes{3}]; % pressure in MPa
+PressureTime = timestamps(CellTimes{1},datayear,datamonth,dataday);
+Pressure = 6000*[CellTimes{2} CellTimes{3}]; % pressure in MPa
 
 % plot both pressures in time
 figure
@@ -107,7 +87,7 @@ clearvars CellTimes
 % get folder info and data file list from start and endfile info
 FolderInfo = dir([datapath datafold]);
 startindex = find(strcmp({FolderInfo.name}, ['data_' num2str(startfile,'%06d') '.bin']) == 1);
-endindex = find(strcmp({FolderInfo.name}, ['data_' endfile '.bin']) == 1);
+endindex = find(strcmp({FolderInfo.name}, ['data_' endtime '.bin']) == 1);
 
 % read params file
 % for now acquisition parameters are hard-coded, this will change with the
@@ -131,6 +111,10 @@ b = [1,-1];
 % check the first nn acquisition sequences for a specific source
 nn = 2;
 
+% % for 2017 only
+% nt = 16;
+% nr = 16;
+
 % load data from bin files and DC filter it too
 datatmp = zeros(nn,ns,nr*nt);
 datafilt = zeros(size(datatmp));
@@ -153,9 +137,9 @@ clearvars datatmp datafilt
 
 %% plot them
 % time plot
-jj = 3; % source-receiver pair
+jj = 1; % source-receiver pair
 figure
-disp('plotting source-receiver amplitude over time')
+disp(['plotting source-receiver #' num2str(jj) ' amplitude over time'])
 plot(T*1E6,dataInit2(:,:,jj,jj),T*1E6,dataInit3(:,:,jj,jj))
 xlabel('Time (\mus)')
 ylabel('Amplitude (a.u.)')
@@ -164,7 +148,7 @@ title(['source-receiver #' num2str(jj)])
 % image plot
 kk = 4; % source number
 figure, imagesc(0:nr-1,T*1E6,squeeze(dataInit3(1,:,:,kk)))
-disp('plotting source #4 over time')
+disp(['plotting receivers for source #' num2str(kk) 'over time'])
 caxis([-1 1]*0.002)
 colormap('jet')
 colorbar
@@ -208,8 +192,8 @@ clearvars dataInit2 dataInit3
 
 %% load selected source receiver pair for all acquisition sequences
 % select pair
-jj = 6; % receiver number
-kk = 6; % source number
+jj = 10; % receiver number
+kk = 10; % source number
 % load data from bin files and DC filter it too
 dataPair = zeros(ns,nq);
 dataPairFilt = zeros(size(dataPair));
@@ -230,7 +214,7 @@ plot(T*1E6,dataPair)
 figure
 disp('plotting figure for selected source-receiver pair')
 plot(T*1E6,dataPair)
-axis([80 120 [-1 1]*5E-1])
+axis([50 70 [-1 1]*5E-1])
 xlabel('Time (\mus)')
 ylabel('Amplitude (a.u.)')
 %celllgd = cellstr(num2str(filenum','%4d'));
@@ -242,7 +226,7 @@ flowpass = 4E6; % cut at 4 MHz
 dataLowFilt = filtfilt(b,a,dataPair);
 
 % quick figure
-kk = 226:228;
+kk = 1;
 figure
 disp('plotting next figure for selected source-receiver pair')
 plot(T*1E6,dataLowFilt(:,kk))
