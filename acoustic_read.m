@@ -1,4 +1,4 @@
-close all
+%close all
 clearvars
 home
 
@@ -8,17 +8,21 @@ datapath = pathbyarchitecture;
 % 2018 acquisitions
 datayear = 18;
 
-datamonth = 06; dataday = 05; endfile = '175813'; % test acquisition cement block C
+datamonth = 07; dataday = 09; endtime = '173250'; % PMMA half block with pulser for debugging
+%datamonth = 07; dataday = 04; endtime = '161650'; % acquisition on PMMA half block for debugging
+%datamonth = 07; dataday = 04; endtime = '174557'; % acquisition on PMMA half block with 16 ch only
 
-%datamonth = 05; dataday = 28; endfile = '170423'; % 
+%datamonth = 06; dataday = 05; endtime = '175813'; % test acquisition cement block C
 
-%datamonth = 05; dataday = 28; endfile = '100142'; % 
+%datamonth = 05; dataday = 28; endtime = '170423'; % 
 
-%datamonth = 05; dataday = 08; endfile = '175209'; % test PMMA half blocks
+%datamonth = 05; dataday = 28; endtime = '100142'; % 
 
-%datamonth = 05; dataday = 09; endfile = '134903'; % injection PMMA half blocks
+%datamonth = 05; dataday = 08; endtime = '175209'; % test PMMA half blocks
 
-%datamonth = 04; dataday = 19; endfile = '211411'; % injection in cement block A
+%datamonth = 05; dataday = 09; endtime = '134903'; % injection PMMA half blocks
+
+%datamonth = 04; dataday = 19; endtime = '211411'; % injection in cement block A
 
 %datamonth = 03; dataday = 26; endtime = '163010'; % acquisition test on aluminium block
 
@@ -111,7 +115,7 @@ b = [1,-1];
 % check the first nn acquisition sequences for a specific source
 nn = 2;
 
-% % for 2017 only
+% % if 16 ch (for 2017 only)
 % nt = 16;
 % nr = 16;
 
@@ -192,8 +196,8 @@ clearvars dataInit2 dataInit3
 
 %% load selected source receiver pair for all acquisition sequences
 % select pair
-jj = 10; % receiver number
-kk = 10; % source number
+jj = 14; % receiver number
+kk = 14; % source number
 % load data from bin files and DC filter it too
 dataPair = zeros(ns,nq);
 dataPairFilt = zeros(size(dataPair));
@@ -208,6 +212,18 @@ end
 %% plot of all signals for this pair
 figure
 plot(T*1E6,dataPair)
+
+%% repeatability bug analysis
+XC = zeros(ns*2-1,nq);
+for ii = 1:nq
+    XC(:,ii) = xcorr(dataPair(:,1),dataPair(:,ii));
+end
+MX = max(XC,[],1);
+
+figure
+plot(1:nq,MX)
+
+IDX = find(MX>30);
 
 %% analyze waveform changes from fluid layer
 % quick figure for selected source-receiver pair
