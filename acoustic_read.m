@@ -111,33 +111,15 @@ Fn = 0.5*Fs;    % Nyquist frequency (Hz)
 a = [1,-0.99];
 b = [1,-1];
 
-%% load initial acquisitions
-% check the first nn acquisition sequences for a specific source
-nn = 2;
-
+%% load selected acquisitions
+% check the first qq acquisition sequences after q0
+q0 =1;
+qq = 2;
 % % if 16 ch (for 2017 only)
 % nt = 16;
 % nr = 16;
 
-% load data from bin files and DC filter it too
-datatmp = zeros(nn,ns,nr*nt);
-datafilt = zeros(size(datatmp));
-for ii = 1:nn
-    fid = fopen([datapath datafold FolderInfo(startindex+ii-1).name],'r');
-    datatmp(ii,:,:) = fread(fid,[ns,nt*nr],'double');
-    fclose(fid);
-    datafilt(ii,:,:) = filtfilt(b,a,squeeze(datatmp(ii,:,:)));
-end
-
-% reshape data
-dataInit2 = reshape(datatmp,nn,ns,nr,nt);
-dataInit3 = reshape(datafilt,nn,ns,nr,nt);
-% 1st index, nn, is nb of initial acquisitions to look at
-% 2nd index, ns, is nb of time samples
-% 3rd index, nr, in nb of receivers
-% 4th index, nt, is nb of sources
-
-clearvars datatmp datafilt
+[dataInit2, dataInit3] = loadbindata(ns,nr,nt,nq,q0,qq,[datapath datafold],FolderInfo,startindex,a,b);
 
 %% plot them
 % time plot
