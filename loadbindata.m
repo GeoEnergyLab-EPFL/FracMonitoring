@@ -1,4 +1,4 @@
-function [ dataInit2,dataInit3 ] = loadbindata(ns,nr,nt,nq,q0,qq,datapath,FolderInfo,startindex,a,b)
+function [ dataInit2,dataInit3 ] = loadbindata(ns,nr,nt,nq,q0,qq,datapath2,FolderInfo,startindex,a,b)
 %LOADBINDATA loads selected binary data files for QQ acquisition snapshots
 %   starting at Q0, with parameters NS, NR, NT and NQ, and DC filter
 %   coefficients A and B
@@ -15,11 +15,11 @@ datatmp = zeros(qq,ns,nr*nt);
 datafilt = zeros(size(datatmp));
 
 % read data and load it to temp arrays
-for ii = q0:qq+q0-1
-    fid = fopen([datapath FolderInfo(startindex+ii-1).name],'r');
-    datatmp(ii,:,:) = fread(fid,[ns,nt*nr],'double');
+for ii = q0:q0+qq-1
+    fid = fopen([datapath2 FolderInfo(startindex+ii-1).name],'r');
+    datatmp(ii-q0+1,:,:) = fread(fid,[ns,nt*nr],'double');
     fclose(fid);
-    datafilt(ii,:,:) = filtfilt(b,a,squeeze(datatmp(ii,:,:))); % DC filter with a and b coefficients
+    datafilt(ii-q0+1,:,:) = filtfilt(b,a,squeeze(datatmp(ii-q0+1,:,:))); % DC filter with a and b coefficients
 end
 
 % reshape data for outputs

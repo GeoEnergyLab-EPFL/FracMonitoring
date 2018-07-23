@@ -8,7 +8,10 @@ datapath = pathbyarchitecture;
 % 2018 acquisitions
 datayear = 18;
 
-datamonth = 07; dataday = 09; endtime = '173250'; % PMMA half block with pulser for debugging
+datamonth = 07; dataday = 18; endtime = '163738'; % Slate block with pulser again, no fracture
+%datamonth = 07; dataday = 17; endtime = '131713'; % Slate block with pulser
+
+%datamonth = 07; dataday = 09; endtime = '173250'; % PMMA half block with pulser for debugging
 %datamonth = 07; dataday = 04; endtime = '161650'; % acquisition on PMMA half block for debugging
 %datamonth = 07; dataday = 04; endtime = '174557'; % acquisition on PMMA half block with 16 ch only
 
@@ -113,8 +116,8 @@ b = [1,-1];
 
 %% load selected acquisitions
 % check the first qq acquisition sequences after q0
-q0 =1;
-qq = 2;
+q0 = 8;
+qq = 3;
 % % if 16 ch (for 2017 only)
 % nt = 16;
 % nr = 16;
@@ -123,7 +126,7 @@ qq = 2;
 
 %% plot them
 % time plot
-jj = 1; % source-receiver pair
+jj = 17; % source-receiver pair
 figure
 disp(['plotting source-receiver #' num2str(jj) ' amplitude over time'])
 plot(T*1E6,dataInit2(:,:,jj,jj),T*1E6,dataInit3(:,:,jj,jj))
@@ -132,7 +135,7 @@ ylabel('Amplitude (a.u.)')
 title(['source-receiver #' num2str(jj)])
 
 % image plot
-kk = 4; % source number
+kk = 17; % source number
 figure, imagesc(0:nr-1,T*1E6,squeeze(dataInit3(1,:,:,kk)))
 disp(['plotting receivers for source #' num2str(kk) 'over time'])
 caxis([-1 1]*0.002)
@@ -178,8 +181,8 @@ clearvars dataInit2 dataInit3
 
 %% load selected source receiver pair for all acquisition sequences
 % select pair
-jj = 14; % receiver number
-kk = 14; % source number
+jj = 22; % receiver number
+kk = 22; % source number
 % load data from bin files and DC filter it too
 dataPair = zeros(ns,nq);
 dataPairFilt = zeros(size(dataPair));
