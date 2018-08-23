@@ -1,4 +1,4 @@
-%close all
+close all
 clearvars
 home
 
@@ -8,7 +8,23 @@ datapath = pathbyarchitecture;
 % 2018 acquisitions
 datayear = 18;
 
-datamonth = 07; dataday = 18; endtime = '163738'; % Slate block with pulser again, no fracture
+%datamonth = 08; dataday = 21; endtime = '121046'; % test before injection on marble block 2
+
+datamonth = 08; dataday = 17; endtime = '180924'; % fracture in marble block
+%datamonth = 08; dataday = 17; endtime = '102644'; % Marble block with amp, sec test before injection
+%datamonth = 08; dataday = 16; endtime = '174852'; % Marble block with amp, test before injection
+
+%datamonth = 07; dataday = 26; endtime = '134021'; % Slate block with pulser, test before injection
+
+%datamonth = 07; dataday = 24; endtime = '155252'; % Slate block with pulser, inside cell with ground connection (T-B only)
+%datamonth = 07; dataday = 24; endtime = '131632'; % Slate block with pulser, inside cell but isolated (T-B only)
+%datamonth = 07; dataday = 24; endtime = '111240'; % Slate block with pulser, taken out of the cell (T-B only)
+%datamonth = 07; dataday = 24; endtime = '091201'; % Slate block with pulser, inside the cell (T-B only)
+%datamonth = 07; dataday = 23; endtime = '173517'; % Slate block with pulser, outside the cell (T-B only)
+
+%datamonth = 07; dataday = 23; endtime = '121117'; % Slate block with pulser again, no fracture
+
+%datamonth = 07; dataday = 18; endtime = '163738'; % Slate block with pulser again, no fracture
 %datamonth = 07; dataday = 17; endtime = '131713'; % Slate block with pulser
 
 %datamonth = 07; dataday = 09; endtime = '173250'; % PMMA half block with pulser for debugging
@@ -76,7 +92,8 @@ Pressure = 6000*[CellTimes{2} CellTimes{3}]; % pressure in MPa
 figure
 disp('plotting pressure over time')
 plot(PressureTime,Pressure*1E-3) % change to MPa
-axis([datenum([PressureTime(1) PressureTime(end)]) 0 20])
+xlim([PressureTime(1) PressureTime(end)])
+ylim([0 20])
 xlabel('Time')
 ylabel('Pressure (MPa)')
 
@@ -84,11 +101,25 @@ ylabel('Pressure (MPa)')
 figure
 disp('plotting gauges difference')
 plot(PressureTime,Pressure(:,2)-Pressure(:,1))
-axis([datenum([PressureTime(1) PressureTime(end)]) [-1 1]*100])
+xlim([PressureTime(1) PressureTime(end)])
+ylim([-1 1]*100)
 xlabel('Time')
 ylabel('Pressure (kPa)')
 
 clearvars CellTimes
+
+%% log-log pressure decrease
+hh = 14;
+mm = 19;
+datetime0loglog = PressureTime(1)+hours(hh-PressureTime(1).Hour)+minutes(mm-PressureTime(1).Minute);
+t0loglog = find(PressureTime>=datetime0loglog,1);
+
+figure
+loglog(0:length(Pressure(t0loglog:end,1))-1,Pressure(t0loglog:end,1)*1E3)
+
+figure
+plot(log10(0:length(Pressure(t0loglog:end,1))-1),log10(Pressure(t0loglog:end,1)*1E3)) % change to MPa
+xlabel('log(Time)')
 
 %% variable definitions and data file listing
 % get folder info and data file list from start and endfile info
@@ -116,8 +147,8 @@ b = [1,-1];
 
 %% load selected acquisitions
 % check the first qq acquisition sequences after q0
-q0 = 8;
-qq = 3;
+q0 = 2;
+qq = 2;
 % % if 16 ch (for 2017 only)
 % nt = 16;
 % nr = 16;
@@ -126,7 +157,7 @@ qq = 3;
 
 %% plot them
 % time plot
-jj = 17; % source-receiver pair
+jj = 2; % source-receiver pair
 figure
 disp(['plotting source-receiver #' num2str(jj) ' amplitude over time'])
 plot(T*1E6,dataInit2(:,:,jj,jj),T*1E6,dataInit3(:,:,jj,jj))
@@ -135,7 +166,7 @@ ylabel('Amplitude (a.u.)')
 title(['source-receiver #' num2str(jj)])
 
 % image plot
-kk = 17; % source number
+kk = 2; % source number
 figure, imagesc(0:nr-1,T*1E6,squeeze(dataInit3(1,:,:,kk)))
 disp(['plotting receivers for source #' num2str(kk) 'over time'])
 caxis([-1 1]*0.002)
@@ -181,8 +212,8 @@ clearvars dataInit2 dataInit3
 
 %% load selected source receiver pair for all acquisition sequences
 % select pair
-jj = 22; % receiver number
-kk = 22; % source number
+jj = 8; % receiver number
+kk = 8; % source number
 % load data from bin files and DC filter it too
 dataPair = zeros(ns,nq);
 dataPairFilt = zeros(size(dataPair));
@@ -196,12 +227,13 @@ end
 
 %% plot of all signals for this pair
 figure
-plot(T*1E6,dataPair)
+plot(T*1E6,dataPair(:,2:end))
+axis([[T(1) T(end)]*1E6 [-1 1]*0.4])
 
 %% repeatability bug analysis
 XC = zeros(ns*2-1,nq);
 for ii = 1:nq
-    XC(:,ii) = xcorr(dataPair(:,1),dataPair(:,ii));
+    XC(:,ii) = xcorr(dataPair(:,2),dataPair(:,ii));
 end
 MX = max(XC,[],1);
 
@@ -227,23 +259,24 @@ flowpass = 4E6; % cut at 4 MHz
 dataLowFilt = filtfilt(b,a,dataPair);
 
 % quick figure
-kk = 1;
+ii = 1;
 figure
 disp('plotting next figure for selected source-receiver pair')
-plot(T*1E6,dataLowFilt(:,kk))
-axis([40 80 [-1 1]*1E-1])
+plot(T*1E6,dataLowFilt(:,ii))
+axis([30 50 [-1 1]*1E-1])
 %axis([88 112 [-1 1]*5E-1])
 xlabel('Time (\mus)')
 ylabel('Amplitude (a.u.)')
 celllgd = cellstr(AcqTime);
-legend(celllgd{kk})
+legend(celllgd{ii})
 
 % max as function of time
 ampmax = max(abs(hilbert(dataLowFilt)));
 figure
 disp('plotting max amplitude of time')
 plot(AcqTime, ampmax,'o-')
-axis([datenum([AcqTime(1) AcqTime(end)]) [0 8]*1E-1])
+xlim([PressureTime(1) PressureTime(end)])
+ylim([0 1]*3E-1)
 xlabel('Acquisition time')
 ylabel('Max Amplitude (a.u.)')
 
@@ -270,8 +303,10 @@ rho_glycerol = 1260;% density glycerol (from paper)
 v_glycerol = 1960;  % velocity glycerol (from paper)
 rho_cement = 2000;  % density cement (from measurement with Lionel Sofia)
 v_cement = 4600;    % velocity cement (crude estimate from first arrival)
+rho_marble = 2700;  % density marble (from litterature)
+v_marble = 6600;    % velocity marble (crude estimate from first arrival)
 % choose the right solid and fluid properties
-solid = 'plexi';
+solid = 'marble';
 fluid = 'glycerol';
 % set the fluid and solid properties for the selected materials
 rho_solid = eval(['rho_' solid]);
@@ -281,7 +316,7 @@ v_fluid = eval(['v_' fluid]);
 
 % frequency band to integrate over
 flow = find(freq>=.5E6,1);
-fhigh = find(freq>=0.9E6,1);
+fhigh = find(freq>=1.1E6,1);
 freqband = freq(flow:fhigh);
 
 % transmission coef
@@ -307,13 +342,15 @@ disp('plotting fluid layer thikness vs time')
 plot(AcqTime(1:end),h(hmin)*1E6)
 xlabel('Acquisition time')
 ylabel('Fluid layer thickness (\mum)')
-axis([datenum([AcqTime(1) AcqTime(end)]) [-1 1]*200])
-title('Fluid thickness estimation')
+xlim([AcqTime(1) AcqTime(end)])
+ylim([-0.5 1]*80)
+title(['Source-receiver pair ' num2str(kk) '-' num2str(jj)])
+
 
 % plots
 figure
 hold on
-for ii = 226:228;
+for ii = 226:228
     plot(h*1E6,Fun(ii,:),h(hmin(ii))*1E6,Fun(ii,hmin(ii)),'ok')
 end
 xlabel('Thickness (\mum)')
