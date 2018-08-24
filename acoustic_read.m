@@ -8,9 +8,10 @@ datapath = pathbyarchitecture;
 % 2018 acquisitions
 datayear = 18;
 
+datamonth = 08; dataday = 21; endtime = '190223'; % injection on marble block 2
 %datamonth = 08; dataday = 21; endtime = '121046'; % test before injection on marble block 2
 
-datamonth = 08; dataday = 17; endtime = '180924'; % fracture in marble block
+%datamonth = 08; dataday = 17; endtime = '180924'; % fracture in marble block
 %datamonth = 08; dataday = 17; endtime = '102644'; % Marble block with amp, sec test before injection
 %datamonth = 08; dataday = 16; endtime = '174852'; % Marble block with amp, test before injection
 
@@ -109,8 +110,11 @@ ylabel('Pressure (kPa)')
 clearvars CellTimes
 
 %% log-log pressure decrease
-hh = 14;
-mm = 19;
+hh = 18;
+mm = 09;
+
+%hh = 14;
+%mm = 19;
 datetime0loglog = PressureTime(1)+hours(hh-PressureTime(1).Hour)+minutes(mm-PressureTime(1).Minute);
 t0loglog = find(PressureTime>=datetime0loglog,1);
 
@@ -212,8 +216,8 @@ clearvars dataInit2 dataInit3
 
 %% load selected source receiver pair for all acquisition sequences
 % select pair
-jj = 8; % receiver number
-kk = 8; % source number
+jj = 1; % receiver number
+kk = 1; % source number
 % load data from bin files and DC filter it too
 dataPair = zeros(ns,nq);
 dataPairFilt = zeros(size(dataPair));
