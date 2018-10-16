@@ -8,10 +8,16 @@ datapath = pathbyarchitecture;
 % 2018 acquisitions
 datayear = 18;
 
-datamonth = 08; dataday = 21; endtime = '190223'; % injection on marble block 2
+datamonth = 09; dataday = 18; endtime = '121809'; % injection on marble block 2
+%datamonth = 09; dataday = 18; endtime = '100103'; % test before injection on marble block 2
+
+%datamonth = 09; dataday = 14; endtime = '190223'; % injection on marble block 2
+%datamonth = 09; dataday = 14; endtime = '123341'; % test before injection on marble block 2
+
+%datamonth = 08; dataday = 21; endtime = '190223'; % injection on marble block 2
 %datamonth = 08; dataday = 21; endtime = '121046'; % test before injection on marble block 2
 
-%datamonth = 08; dataday = 17; endtime = '180924'; % fracture in marble block
+%%datamonth = 08; dataday = 17; endtime = '180924'; % fracture in marble block
 %datamonth = 08; dataday = 17; endtime = '102644'; % Marble block with amp, sec test before injection
 %datamonth = 08; dataday = 16; endtime = '174852'; % Marble block with amp, test before injection
 
@@ -94,20 +100,95 @@ figure
 disp('plotting pressure over time')
 plot(PressureTime,Pressure*1E-3) % change to MPa
 xlim([PressureTime(1) PressureTime(end)])
-ylim([0 20])
+ylim([0 40])
 xlabel('Time')
 ylabel('Pressure (MPa)')
 
-% difference between two gauges
-figure
-disp('plotting gauges difference')
-plot(PressureTime,Pressure(:,2)-Pressure(:,1))
-xlim([PressureTime(1) PressureTime(end)])
-ylim([-1 1]*100)
-xlabel('Time')
-ylabel('Pressure (kPa)')
+% % difference between two gauges
+% figure
+% disp('plotting gauges difference')
+% plot(PressureTime,Pressure(:,2)-Pressure(:,1))
+% xlim([PressureTime(1) PressureTime(end)])
+% ylim([-1 1]*100)
+% xlabel('Time')
+% ylabel('Pressure (kPa)')
 
 clearvars CellTimes
+
+%% Look at pressure changes and injection flow
+% basic derivation
+figure
+plot(PressureTime(1:end-1),diff(Pressure))
+xlim([PressureTime(500) PressureTime(end)])
+ylim([-1 1]*50)
+xlabel('Time')
+ylabel('dP/dt (kPa/s)')
+
+% filter first
+fnpressure = 0.5;   % Nyquist freq for pressure data (0.5 Hz)
+forder = 2; % filter order
+flow = 0.2; % low-pass freq
+[B, A] = butter(forder,flow/fnpressure,'low');
+PressureFilt = filtfilt(B,A,Pressure);
+
+% other filter
+PressureMed = medfilt1(Pressure);
+
+% remove spikes and then filter
+thres = 100; % threshold pressure noise jump in kPa
+Idx = find(diff(Pressure(:,1))>thres);  % first find positive jump
+Idx = Idx((Pressure(Idx+1,1)-Pressure(Idx,1))>thres); % then negative jump behind
+% set spikes to NaN
+Pressure2 = Pressure;
+Pressure2(Idx+1) = NaN;
+% then interpolate
+Pressure2 = interp1(Pressure(~(Idx-1)),Pressure2(~(Idx-1)),(Idx-1)');
+Pressure2 = medfilt1(Pressure2);
+
+% try other method
+Pressure3 = filloutliers(Pressure,'center','movmedian',5,1);
+
+% plot filtered pressures in time
+figure
+plot(PressureTime,Pressure(:,1)*1E-3,PressureTime,Pressure3(:,1)*1E-3) % change to MPa
+xlim([PressureTime(1) PressureTime(end)])
+ylim([0 40])
+xlabel('Time')
+ylabel('Pressure (MPa)')
+
+
+%% make nice fig for poster
+% find time of first flow
+hh = 11;
+mm = 42;
+t1flow = find(PressureTime.Hour>=hh&PressureTime.Minute>=mm,1);
+% time of lower flow rate
+mm = 48;
+t2flow = find(PressureTime.Hour>=hh&PressureTime.Minute>=mm,1);
+% time of initiation
+hh = 14;
+mm = 19;
+tinit = find(PressureTime.Hour>=hh&PressureTime.Minute>=mm,1);
+
+% make figure
+figure
+set(gcf,'Position',[2286,1,800,400])
+plot(PressureTime,Pressure*1E-3) % change to MPa
+% plot vertical markers
+hold on
+plot(PressureTime([t1flow t1flow]),[0 20],'k:')
+plot(PressureTime([t2flow t2flow]),[0 20],'k:')
+plot(PressureTime([tinit tinit]),[0 20],'k:')
+xlim([PressureTime(1) PressureTime(20000)])
+ylim([0 20])
+% annotations
+xlabel('Time')
+ylabel('Pressure (MPa)')
+title('Pressurization curve')
+text(PressureTime(1),5,'Preparation')
+text(PressureTime(2000),10,'High flow')
+text(PressureTime(5000),16,'Lower injection flow')
+text(PressureTime(14000),15,{'Breakdown and','depressurization'})
 
 %% log-log pressure decrease
 hh = 18;
@@ -216,8 +297,8 @@ clearvars dataInit2 dataInit3
 
 %% load selected source receiver pair for all acquisition sequences
 % select pair
-jj = 1; % receiver number
-kk = 1; % source number
+jj = 13; % receiver number
+kk = 13; % source number
 % load data from bin files and DC filter it too
 dataPair = zeros(ns,nq);
 dataPairFilt = zeros(size(dataPair));
@@ -361,17 +442,32 @@ xlabel('Thickness (\mum)')
 ylabel('Objective function')
 legend({' num2str(ii)'})
 
-%%
-badindex = [3 11 14 16 18 20 22 41 43 45 47 66 68 74 87 94 106 108 114 227 ...
-    238 247 248 254 256 281 283 289 308 316 318 322 325 328 330 340 341 345 ...
-    347:358 361:363 370 372:389 390 391 427 428 454 455 463 467 471 484 486];
+%% nice figure for poster
+% time of initiation
+hh = 14;
+mm = 19;
+tinit2 = find(AcqTime.Hour>=hh&AcqTime.Minute>=mm,1);
 
-%hminfixed = hmin;
-hminfixed(badindex) = hmin(badindex);
+% make figure
+figure
+set(gcf,'Position',[2286,1,800,400])
+plot(AcqTime(1:end),h(hmin)*1E6)
+xlabel('Time')
+ylabel('Fluid thickness (\mum)')
+xlim([PressureTime(1) PressureTime(20000)])
+yrange = [-0.5 1]*40;
+ylim(yrange)
+title(['Elastic wave analysis for pair ' num2str(kk)])
+hold on
+plot(PressureTime([t1flow t1flow]),yrange,'k:')
+plot(PressureTime([t2flow t2flow]),yrange,'k:')
+plot(PressureTime([tinit tinit]),yrange,'k:')
 
-figure, plot(AcqTime(1:end),h(hminfixed)*1E6)
-xlabel('Acquisition time')
-ylabel('Fluid layer thickness (\mum)')
+axes('Position',[.34 .55 .25 .25])
+box on
+plot(AcqTime(tinit2-5:tinit2+7),h(hmin(tinit2-5:tinit2+7))*1E6)
+axis tight
+title('Breakdown inset')
 
 %% thickness estimation for all raypaths normal to the fracture plane (vertical)
 % define source-receiver paris to consider
