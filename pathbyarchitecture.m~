@@ -4,7 +4,7 @@ function [datapath] = pathbyarchitecture(servername)
 %   to the computer architecture on which the function is running for
 %   server SERVERNAME, 
 %
-% Thomas Blum, Geo-Energy Lab, EPFL, December 2018
+% Thomas Blum, Geo-Energy Lab, EPFL, October 2018
 
 if ismac % path on macos
     [~, username] = system('whoami');

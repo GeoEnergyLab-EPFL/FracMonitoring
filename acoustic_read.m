@@ -3,7 +3,8 @@ clearvars
 home
 
 %% data path on ENACDrives
-datapath = pathbyarchitecture;
+%datapath = pathbyarchitecture;
+datapath = '/home/tblum/data/';
 
 % 2018 acquisitions
 datayear = 18;
@@ -17,7 +18,7 @@ datamonth = 09; dataday = 18; endtime = '121809'; % injection on marble block 2
 %datamonth = 08; dataday = 21; endtime = '190223'; % injection on marble block 2
 %datamonth = 08; dataday = 21; endtime = '121046'; % test before injection on marble block 2
 
-%%datamonth = 08; dataday = 17; endtime = '180924'; % fracture in marble block
+%datamonth = 08; dataday = 17; endtime = '180924'; % fracture in marble block
 %datamonth = 08; dataday = 17; endtime = '102644'; % Marble block with amp, sec test before injection
 %datamonth = 08; dataday = 16; endtime = '174852'; % Marble block with amp, test before injection
 
@@ -134,61 +135,75 @@ PressureFilt = filtfilt(B,A,Pressure);
 % other filter
 PressureMed = medfilt1(Pressure);
 
-% remove spikes and then filter
-thres = 100; % threshold pressure noise jump in kPa
-Idx = find(diff(Pressure(:,1))>thres);  % first find positive jump
-Idx = Idx((Pressure(Idx+1,1)-Pressure(Idx,1))>thres); % then negative jump behind
-% set spikes to NaN
-Pressure2 = Pressure;
-Pressure2(Idx+1) = NaN;
-% then interpolate
-Pressure2 = interp1(Pressure(~(Idx-1)),Pressure2(~(Idx-1)),(Idx-1)');
-Pressure2 = medfilt1(Pressure2);
+% % remove spikes and then filter
+% thres = 100; % threshold pressure noise jump in kPa
+% Idx = find(diff(Pressure(:,1))>thres);  % first find positive jump
+% Idx = Idx((Pressure(Idx+1,1)-Pressure(Idx,1))>thres); % then negative jump behind
+% % set spikes to NaN
+% Pressure2 = Pressure;
+% Pressure2(Idx+1) = NaN;
+% % then interpolate
+% Pressure2 = interp1(Pressure(~(Idx-1)),Pressure2(~(Idx-1)),(Idx-1)');
+% Pressure2 = medfilt1(Pressure2);
 
 % try other method
 Pressure3 = filloutliers(Pressure,'center','movmedian',5,1);
 
 % plot filtered pressures in time
 figure
-plot(PressureTime,Pressure(:,1)*1E-3,PressureTime,Pressure3(:,1)*1E-3) % change to MPa
+plot(PressureTime,Pressure3*1E-3) % change to MPa
 xlim([PressureTime(1) PressureTime(end)])
 ylim([0 40])
 xlabel('Time')
 ylabel('Pressure (MPa)')
 
+% improved derivation
+figure
+plot(PressureTime(1:end-1),diff(Pressure3))
+xlim([PressureTime(500) PressureTime(end)])
+ylim([-1 1]*50)
+xlabel('Time')
+ylabel('dP/dt (kPa/s)')
 
 %% make nice fig for poster
 % find time of first flow
-hh = 11;
-mm = 42;
+hh = 10; %11;
+mm = 20; %42;
 t1flow = find(PressureTime.Hour>=hh&PressureTime.Minute>=mm,1);
 % time of lower flow rate
 mm = 48;
 t2flow = find(PressureTime.Hour>=hh&PressureTime.Minute>=mm,1);
 % time of initiation
-hh = 14;
-mm = 19;
+hh = 12; %14;
+mm = 00; %19;
 tinit = find(PressureTime.Hour>=hh&PressureTime.Minute>=mm,1);
+% time of atm pressure
+hh = 12;
+mm = 12;
+tatm = find(PressureTime.Hour>=hh&PressureTime.Minute>=mm,1);
 
 % make figure
 figure
 set(gcf,'Position',[2286,1,800,400])
-plot(PressureTime,Pressure*1E-3) % change to MPa
+plot(PressureTime,Pressure3*1E-3) % change to MPa
 % plot vertical markers
 hold on
-plot(PressureTime([t1flow t1flow]),[0 20],'k:')
-plot(PressureTime([t2flow t2flow]),[0 20],'k:')
-plot(PressureTime([tinit tinit]),[0 20],'k:')
-xlim([PressureTime(1) PressureTime(20000)])
-ylim([0 20])
+plot(PressureTime([t1flow t1flow]),[0 40],'k:')
+%plot(PressureTime([t2flow t2flow]),[0 40],'k:')
+plot(PressureTime([tinit tinit]),[0 40],'k:')
+plot(PressureTime([tatm tatm]),[0 40],'k:')
+
+datetick('x',15)
+xlim([PressureTime(1) PressureTime(end)])
+ylim([0 40])
 % annotations
 xlabel('Time')
 ylabel('Pressure (MPa)')
 title('Pressurization curve')
-text(PressureTime(1),5,'Preparation')
-text(PressureTime(2000),10,'High flow')
-text(PressureTime(5000),16,'Lower injection flow')
-text(PressureTime(14000),15,{'Breakdown and','depressurization'})
+%text(PressureTime(1),5,'Preparation')
+text(PressureTime(1),35,'High flow')
+text(PressureTime(2000),35,'Lower injection flow')
+text(PressureTime(6000),25,{'Breakdown and','depressurization'})
 
 %% log-log pressure decrease
 hh = 18;
@@ -251,7 +266,7 @@ ylabel('Amplitude (a.u.)')
 title(['source-receiver #' num2str(jj)])
 
 % image plot
-kk = 2; % source number
+kk = 7; % source number
 figure, imagesc(0:nr-1,T*1E6,squeeze(dataInit3(1,:,:,kk)))
 disp(['plotting receivers for source #' num2str(kk) 'over time'])
 caxis([-1 1]*0.002)
@@ -297,8 +312,8 @@ clearvars dataInit2 dataInit3
 
 %% load selected source receiver pair for all acquisition sequences
 % select pair
-jj = 13; % receiver number
-kk = 13; % source number
+jj = 7; % receiver number
+kk = 24; %24; % source number
 % load data from bin files and DC filter it too
 dataPair = zeros(ns,nq);
 dataPairFilt = zeros(size(dataPair));
@@ -314,6 +329,8 @@ end
 figure
 plot(T*1E6,dataPair(:,2:end))
 axis([[T(1) T(end)]*1E6 [-1 1]*0.4])
+xlabel('Time (\mus)')
+ylabel('Amplitude (a.u.)')
 
 %% repeatability bug analysis
 XC = zeros(ns*2-1,nq);
@@ -326,6 +343,213 @@ figure
 plot(1:nq,MX)
 
 IDX = find(MX>30);
+
+%% look at changes from diffraction
+% plot traces with time
+figure
+imagesc(1:nq,T*1E6,dataPair)
+caxis([-1 1]*0.002)
+%colormap('jet')
+colorbar
+xlim([1000 nq])
+ylim([T(1) T(3000)]*1E6)
+xlabel('Acquisition number')
+ylabel('Time (\mus)')
+
+% compute difference
+navg = 800;
+dataAvg = mean(dataPair(:,1:navg),2);
+dataDiff = bsxfun(@minus,dataPair,dataAvg);
+dataAvgFilt = mean(dataPairFilt(:,1:navg),2);
+dataDiffFilt = bsxfun(@minus,dataPairFilt,dataAvgFilt);
+
+% plot difference
+figure
+imagesc(1:nq,T*1E6,dataDiffFilt)
+caxis([-1 1]*0.0005)
+xlim([1000 nq])
+ylim([T(1) T(3000)]*1E6)
+xlabel('Acquisition number')
+ylabel('Time (\mus)')
+
+%% automated diffraction picking (for pair 7-24)
+% first additional filtering
+Flow = 1.5E6;   % lowpass freq
+[bbutter, abutter] = butter(2,Flow/Fn,'low');
+dataButter = filtfilt(bbutter,abutter,dataPairFilt);
+dataAvgButter = mean(dataButter(:,1:navg),2);
+dataDiffButter = bsxfun(@minus,dataButter,dataAvgButter);
+% plot difference
+fbutter = figure;
+imagesc(1:nq,T*1E6,dataDiffButter)
+caxis([-1 1]*0.0005)
+xlim([1000 nq])
+ylim([T(1) T(3000)]*1E6)
+xlabel('Acquisition number')
+ylabel('Time (\mus)')
+
+% guessed time from manual pick
+q_guess = 1030; % trace number for first guess
+t_guess = find(T>=40E-6,1); % guessed time in micros
+
+% plot
+figure
+plot(T*1E6,dataDiff(:,q_guess),T*1E6,dataDiffFilt(:,q_guess),T*1E6,dataDiffButter(:,q_guess))
+xlim([0 60])
+
+% simple neighbor cross-correlation
+normwin = find(T>=2.5E-6,1); % window half-length is 2 microsec
+% improve initial guess by looking for peak
+[~, t_tmp] = max(abs(hilbert(dataDiffButter(t_guess-normwin:t_guess+normwin,q_guess))));
+t_inittrace = t_tmp+t_guess-normwin-1;
+hold on, plot(T*1E6,abs(hilbert(dataDiffButter(:,q_guess))),'k')
+tmptrc = abs(hilbert(dataDiffButter(:,q_guess)));
+plot(T(t_inittrace)*1E6,tmptrc(t_inittrace),'*k')
+
+% 
+xcshift = zeros(1,nq);
+for ii = q_guess+1:nq
+    xc1 = dataDiffButter(t_inittrace+xcshift(ii-1)-normwin:t_inittrace+xcshift(ii-1)+normwin,ii-1)/...
+        max(abs(dataDiffButter(t_inittrace+xcshift(ii-1)-normwin:t_inittrace+xcshift(ii-1)+normwin,ii-1)));
+    xc2 = dataDiffButter(t_inittrace+xcshift(ii-1)-normwin:t_inittrace+xcshift(ii-1)+normwin,ii)/...
+        max(abs(dataDiffButter(t_inittrace+xcshift(ii-1)-normwin:t_inittrace+xcshift(ii-1)+normwin,ii)));
+    [xcres, lags] = xcorr(xc1,xc2);
+    [~, yy] = max(xcres);
+    xcshift(ii) = xcshift(ii-1)-(yy-1+lags(1));
+end
+
+figure(fbutter)
+hold on
+plot(1:nq,T(xcshift+t_inittrace)*1E6,'.k')
+
+
+% figure of signal envelope
+figure
+imagesc(1:nq,T*1E6,abs(hilbert(dataDiffButter)))
+caxis([0 1]*0.002)
+xlim([1000 nq])
+ylim([T(1) T(3000)]*1E6)
+xlabel('Acquisition number')
+ylabel('Time (\mus)')
+
+%% peak detection from envelope and xcorr
+% find max from envelope
+tstart = find(T>=25E-6,1);
+[pks,locs] = findpeaks(abs(hilbert(dataDiffButter(:,q_guess))));
+[~, idx] = min(abs(locs-t_guess));
+locstart = locs(idx);
+
+% init pksshift
+pksshift = locstart*ones(1,nq);
+for ii = q_guess+1:nq
+    [pks,locs] = findpeaks(abs(hilbert(dataDiffButter(:,ii))));
+    [~, idxtmp] = min(abs(locs-pksshift(ii-1))); % find nearest peak
+    pksshift(ii) = locs(idxtmp);
+    if locs(idxtmp)>=pksshift(ii-1)+25&&idxtmp>1
+        pksshift(ii) = locs(idxtmp-1);
+    end
+end
+
+hold on
+plot(1:nq,T(pksshift)*1E6,'w')
+
+% pb after 1146
+% guessed time from manual pick
+q_guess = 1146; % trace number for first guess
+t_guess = pksshift(q_guess); % guessed time in micros
+
+% plot
+figure
+plot(T*1E6,dataDiff(:,q_guess),T*1E6,dataDiffFilt(:,q_guess),T*1E6,dataDiffButter(:,q_guess))
+xlim([0 60])
+
+% simple neighbor cross-correlation
+normwin = find(T>=2.5E-6,1); % window half-length is 2 microsec
+% improve initial guess by looking for peak
+[~, t_tmp] = max(abs(hilbert(dataDiffButter(t_guess-normwin:t_guess+normwin,q_guess))));
+t_inittrace = t_tmp+t_guess-normwin-1;
+hold on, plot(T*1E6,abs(hilbert(dataDiffButter(:,q_guess))),'k')
+tmptrc = abs(hilbert(dataDiffButter(:,q_guess)));
+plot(T(t_inittrace)*1E6,tmptrc(t_inittrace),'*k')
+
+% 
+xcshift = zeros(1,nq);
+for ii = q_guess+1:nq
+    xc1 = dataDiffButter(t_inittrace+xcshift(ii-1)-normwin:t_inittrace+xcshift(ii-1)+normwin,ii-1)/...
+        max(abs(dataDiffButter(t_inittrace+xcshift(ii-1)-normwin:t_inittrace+xcshift(ii-1)+normwin,ii-1)));
+    xc2 = dataDiffButter(t_inittrace+xcshift(ii-1)-normwin:t_inittrace+xcshift(ii-1)+normwin,ii)/...
+        max(abs(dataDiffButter(t_inittrace+xcshift(ii-1)-normwin:t_inittrace+xcshift(ii-1)+normwin,ii)));
+    [xcres, lags] = xcorr(xc1,xc2);
+    [~, yy] = max(xcres);
+    xcshift(ii) = xcshift(ii-1)-(yy-1+lags(1));
+end
+
+figure(fbutter)
+hold on
+plot(1:nq,T(xcshift+t_inittrace)*1E6,'.k')
+
+%% Test directly from first max
+% guessed time from manual pick
+q_guess = 1026; % trace number for first guess
+t_guess = find(T>=39.2E-6,1); % guessed time in micros
+
+% simple neighbor cross-correlation
+frontwin = find(T>=1E-6,1);
+backwin = 0; %find(T>=0.5E-6,1);
+% improve initial guess by looking for peak
+[~, t_tmp] = max(dataDiffButter(t_guess-frontwin:t_guess+backwin,q_guess));
+t_inittrace = t_tmp+t_guess-frontwin-1;
+
+% 
+maxshift = zeros(1,nq);
+for ii = q_guess+1:nq
+    [~, idxtmp] = max(dataDiffButter(t_inittrace+maxshift(ii-1)-frontwin:...
+        t_inittrace+maxshift(ii-1)+backwin,ii));
+    maxshift(ii) = maxshift(ii-1)+idxtmp-frontwin-1;
+    if ii==1121
+        maxshift(ii) = 1726-t_inittrace-1;
+    end
+    if ii==1174
+        maxshift(ii) = 1486-t_inittrace-1;
+    end
+    
+end
+
+%% make nice figure for poster
+figure
+set(gcf,'Position',[2286,1,1000,400])
+imagesc(1:nq,T*1E6,dataDiffButter)
+caxis([-1 1]*0.0005)
+xlim([950 nq])
+ylim([T(999) T(2500)]*1E6)
+xlabel('Acquisition time')
+ylabel('Travelime (\mus)')
+xticklabels(cellstr(AcqTime(xticks)))
+hold on
+plot(1:nq,T(maxshift+t_inittrace)*1E6,'r')
+title('Diffraction arrival pair 7-24')
+
+%% inversion diffraction 
+x = 0:1:125;
+halflength = 125;
+fracdepth = 20;
+sourcepos = 54;
+receiverpos = 50;
+dist1 = sqrt((halflength+fracdepth)^2+(sourcepos-x).^2);
+dist2 = sqrt((halflength-x).^2+(receiverpos-fracdepth)^2);
+v_marble = 6600;
+traveltime = (dist1+dist2)*1E-3/v_marble;
+
+vq = interp1(traveltime,x,T(maxshift+t_inittrace));
+vq(isnan(vq)) = max(vq);
+figure
+plot(AcqTime(1000:end),vq(1000:end))
+datetick('x',15)
+
+%% add to thickness figure
+yyaxis right
+plot(AcqTime(1000:end),vq(1000:end))
+ylabel('Fracture tip position (mm)')
 
 %% analyze waveform changes from fluid layer
 % quick figure for selected source-receiver pair
@@ -388,11 +612,13 @@ rho_glycerol = 1260;% density glycerol (from paper)
 v_glycerol = 1960;  % velocity glycerol (from paper)
 rho_cement = 2000;  % density cement (from measurement with Lionel Sofia)
 v_cement = 4600;    % velocity cement (crude estimate from first arrival)
-rho_marble = 2700;  % density marble (from litterature)
+rho_marble = 2700;  % density marble (from literature)
 v_marble = 6600;    % velocity marble (crude estimate from first arrival)
+rho_silicone = 1050;% 
+v_silicone = 1350;  %
 % choose the right solid and fluid properties
 solid = 'marble';
-fluid = 'glycerol';
+fluid = 'silicone';
 % set the fluid and solid properties for the selected materials
 rho_solid = eval(['rho_' solid]);
 v_solid = eval(['v_' solid]);
@@ -405,7 +631,8 @@ fhigh = find(freq>=1.1E6,1);
 freqband = freq(flow:fhigh);
 
 % transmission coef
-h = (-250:0.5:250)*1E-6;
+hmax = 800; % max thickness excursion in microns
+h = (-hmax:0.5:hmax)*1E-6;
 alpha = 2*pi*freqband*h/v_fluid;  % freq * thickness
 Zr = rho_fluid*v_fluid/(rho_solid*v_solid);
 rff = (Zr-1)/(Zr+1);
@@ -427,9 +654,11 @@ disp('plotting fluid layer thikness vs time')
 plot(AcqTime(1:end),h(hmin)*1E6)
 xlabel('Acquisition time')
 ylabel('Fluid layer thickness (\mum)')
+datetick('x',15)
 xlim([AcqTime(1) AcqTime(end)])
-ylim([-0.5 1]*80)
+ylim([-0.5 1]*300)
 title(['Source-receiver pair ' num2str(kk) '-' num2str(jj)])
+
 
 
 % plots
@@ -443,31 +672,38 @@ ylabel('Objective function')
 legend({' num2str(ii)'})
 
 %% nice figure for poster
-% time of initiation
-hh = 14;
-mm = 19;
-tinit2 = find(AcqTime.Hour>=hh&AcqTime.Minute>=mm,1);
-
 % make figure
 figure
-set(gcf,'Position',[2286,1,800,400])
+set(gcf,'Position',[2286,1,1000,400])
+yyaxis left
 plot(AcqTime(1:end),h(hmin)*1E6)
+datetick('x',15)
 xlabel('Time')
-ylabel('Fluid thickness (\mum)')
-xlim([PressureTime(1) PressureTime(20000)])
-yrange = [-0.5 1]*40;
+ylabel('Fluid thickness (\mu m)')
+xlim([PressureTime(1) PressureTime(end)])
+yrange = [-0.2 1]*300;
 ylim(yrange)
-title(['Elastic wave analysis for pair ' num2str(kk)])
+title(['Transmitted wave analysis for pair ' num2str(kk)])
 hold on
 plot(PressureTime([t1flow t1flow]),yrange,'k:')
-plot(PressureTime([t2flow t2flow]),yrange,'k:')
+%plot(PressureTime([t2flow t2flow]),yrange,'k:')
 plot(PressureTime([tinit tinit]),yrange,'k:')
+plot(PressureTime([tatm tatm]),yrange,'k:')
 
-axes('Position',[.34 .55 .25 .25])
-box on
-plot(AcqTime(tinit2-5:tinit2+7),h(hmin(tinit2-5:tinit2+7))*1E6)
-axis tight
-title('Breakdown inset')
+% axes('Position',[.34 .55 .25 .25])
+% box on
+% plot(AcqTime(tinit2-5:tinit2+7),h(hmin(tinit2-5:tinit2+7))*1E6)
+% axis tight
+% title('Breakdown inset')
+
+%% add to other figure
+hold on
+yyaxis left
+plot(AcqTime(1:end),h(hmin)*1E6,'-','Color',[0.3010 0.7450 0.9330])
+linehandle = findobj(gca,'Type','line');
+
+legend([linehandle(5) linehandle(1)],'pair 5','pair 6')
+title('Transmitted wave analysis for pairs 5 and 6')
 
 %% thickness estimation for all raypaths normal to the fracture plane (vertical)
 % define source-receiver paris to consider
