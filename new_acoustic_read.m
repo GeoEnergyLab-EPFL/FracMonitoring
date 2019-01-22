@@ -14,21 +14,22 @@ switch datastor
     case 'enacdrives'
         datapath = pathbyarchitecture('enac1files');
     case 'local'
-        datapath = '/home/tblum/data/';
+        [~, username] = system('whoami');
+        datapath = ['/home/' username(1:end-1) '/data/'];
 end
 % 2018 acquisitions
 datayear = 18;
 % injection on slate
 datamonth = 11;
 dataday = 27;
-starttime = '122323';
+starttime = '142253';
 
 % data folder name from experiment date
 datafold = [num2str(datayear,'%02d') '-' num2str(datamonth,'%02d') '-' ...
     num2str(dataday,'%02d') '/'];
 % extract timestamp list and other "low frequency" measurement data
 fid = fopen([datapath datafold num2str(starttime) '.txt'],'r');
-hdrcol = 12;
+hdrcol = 15;
 hdrData = textscan(fid,'%s',hdrcol);
 CellData = textscan(fid,'%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f');
 fclose(fid);
@@ -42,6 +43,21 @@ AcqTime = timestamps(CellTimes,datayear,datamonth,dataday);
 % extract header info from JSON file
 fjson = [datapath datafold num2str(starttime) '.json'];
 jsonhdr = jsondecode(fileread(fjson));
+
+%% pressure/volume profile and other LF measurements
+% plot pressure gauge data
+PressureGauge = [CellData{2} CellData{3}]; % pressure in MPa
+figure
+plot(AcqTime,PressureGauge)
+xlim([AcqTime(1) AcqTime(end)])
+ylim([0 40])
+xlabel('Time')
+ylabel('Pressure (MPa)')
+% show only time on x-axis
+datetick('x',15)
+
+hold on
+plot(AcqTime,CellData{10}/1E3)
 
 %% load data from bin file
 % read active acoustic parameters from JSON header
@@ -68,8 +84,12 @@ end
 nq = floor(binstats.bytes/seqsize); % number of acquisition sequences
 
 % read data file
-q0 = 6; % initial sequence to read
+q0 = 1; % initial sequence to read (first one is 1)
 qq = 5; % number of sequences to read
+if q0+qq-1>nq
+    disp('trying to read non-existant sequences')
+end
+
 % set pointer to beginning of binary data for q0 sequence
 fseek(fid,hdrsize+(q0-1)*seqsize,'bof');
 
@@ -132,3 +152,4 @@ bar(1:nr,N)
 axis([0.5 nr+0.5 0 max(N)])
 xlabel('Source-receiver pair')
 ylabel('Signal strength')
+

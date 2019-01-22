@@ -312,8 +312,8 @@ clearvars dataInit2 dataInit3
 
 %% load selected source receiver pair for all acquisition sequences
 % select pair
-jj = 7; % receiver number
-kk = 24; %24; % source number
+jj = 18; % receiver number
+kk = 16; %24; % source number
 % load data from bin files and DC filter it too
 dataPair = zeros(ns,nq);
 dataPairFilt = zeros(size(dataPair));
@@ -333,16 +333,16 @@ xlabel('Time (\mus)')
 ylabel('Amplitude (a.u.)')
 
 %% repeatability bug analysis
-XC = zeros(ns*2-1,nq);
-for ii = 1:nq
-    XC(:,ii) = xcorr(dataPair(:,2),dataPair(:,ii));
-end
-MX = max(XC,[],1);
-
-figure
-plot(1:nq,MX)
-
-IDX = find(MX>30);
+% XC = zeros(ns*2-1,nq);
+% for ii = 1:nq
+%     XC(:,ii) = xcorr(dataPair(:,2),dataPair(:,ii));
+% end
+% MX = max(XC,[],1);
+% 
+% figure
+% plot(1:nq,MX)
+% 
+% IDX = find(MX>30);
 
 %% look at changes from diffraction
 % plot traces with time
@@ -364,13 +364,15 @@ dataAvgFilt = mean(dataPairFilt(:,1:navg),2);
 dataDiffFilt = bsxfun(@minus,dataPairFilt,dataAvgFilt);
 
 % plot difference
-figure
+difffig = figure;
 imagesc(1:nq,T*1E6,dataDiffFilt)
+%colormap('gray')
 caxis([-1 1]*0.0005)
-xlim([1000 nq])
-ylim([T(1) T(3000)]*1E6)
+xlim([950 nq])
+ylim([T(1000) T(2500)]*1E6)
 xlabel('Acquisition number')
 ylabel('Time (\mus)')
+%print(difffig,['./figures/diffraction' num2str(kk) '-' num2str(jj)],'-dpng')
 
 %% automated diffraction picking (for pair 7-24)
 % first additional filtering
@@ -491,28 +493,36 @@ plot(1:nq,T(xcshift+t_inittrace)*1E6,'.k')
 %% Test directly from first max
 % guessed time from manual pick
 q_guess = 1026; % trace number for first guess
-t_guess = find(T>=39.2E-6,1); % guessed time in micros
+t_guess = find(T>=40E-6,1); % guessed time in micros
+% t_guess = find(T>=39.2E-6,1); % for pair 7-24
 
 % simple neighbor cross-correlation
 frontwin = find(T>=1E-6,1);
-backwin = 0; %find(T>=0.5E-6,1);
+backwin = find(T>=0.5E-6,1);
 % improve initial guess by looking for peak
 [~, t_tmp] = max(dataDiffButter(t_guess-frontwin:t_guess+backwin,q_guess));
 t_inittrace = t_tmp+t_guess-frontwin-1;
 
 % 
 maxshift = zeros(1,nq);
+ii1 = 1049; % forced point
+ii2 = 1163; % forced point
+ii3 = 1172;
 for ii = q_guess+1:nq
     [~, idxtmp] = max(dataDiffButter(t_inittrace+maxshift(ii-1)-frontwin:...
         t_inittrace+maxshift(ii-1)+backwin,ii));
     maxshift(ii) = maxshift(ii-1)+idxtmp-frontwin-1;
-    if ii==1121
-        maxshift(ii) = 1726-t_inittrace-1;
-    end
-    if ii==1174
-        maxshift(ii) = 1486-t_inittrace-1;
-    end
-    
+%     if ii==ii1
+%         maxshift(ii) = find(T>=41.3E-6,1)-t_inittrace-1;
+%         %maxshift(ii) = 1726-t_inittrace-1; % for 7-24
+%     end
+%     if ii==ii2
+%         maxshift(ii) = find(T>=30.64E-6,1)-t_inittrace-1;
+%         % maxshift(ii) = 1486-t_inittrace-1; % for 7-24
+%     end
+%     if ii==ii3
+%        maxshift(ii) = find(T>=29.82E-6,1)-t_inittrace-1;
+%     end
 end
 
 %% make nice figure for poster
@@ -527,8 +537,18 @@ ylabel('Travelime (\mus)')
 xticklabels(cellstr(AcqTime(xticks)))
 hold on
 plot(1:nq,T(maxshift+t_inittrace)*1E6,'r')
-title('Diffraction arrival pair 7-24')
+title(['Diffraction arrival pair ' num2str(kk) '-' num2str(jj)'])
 
+% add forced points
+% plot(ii1,T(maxshift(ii1)+t_inittrace)*1E6,'ro')
+% plot(ii2,T(maxshift(ii2)+t_inittrace)*1E6,'ro')
+
+%% save data to file
+Datasave = [(1000:nq)', T(maxshift(1000:nq)+t_inittrace)*1E6];
+csvwrite(['~/matlab/EPFL/diffraction_18-09-18/' num2str(kk) '-' num2str(jj)' '.csv'],...
+    Datasave);
+
+    
 %% inversion diffraction 
 x = 0:1:125;
 halflength = 125;
