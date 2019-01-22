@@ -8,12 +8,7 @@ classdef Platten
         id ;   % id of the block
        
         xy_holes;
-        face;
-        xloc;  % define the local platten coordinates in the global Block system
-        yloc;
-        
-        offset_x=0.;
-        offset_y=0.;
+             
         
     end
     
@@ -26,12 +21,10 @@ classdef Platten
     methods
         
         % constructor
-        function obj = Platten(ID,face,xloc,yloc,varargin)
+        function obj = Platten(ID) % ,varargin
             
             obj.id=ID; % platten id
-            obj.face=face; % touching face of the block N,S,E,W,T,B
-            obj.xloc=xloc;
-            obj.yloc=yloc;
+            
             
             switch ID
                 case {'A','B','C'}
@@ -55,12 +48,12 @@ classdef Platten
                     
             end
             
-            % add varargin
-            nVarargs = length(varargin);
-            if (nVarargs==2)
-                obj.offset_x=varargin{1};
-                obj.offset_y=varargin{2};
-            end
+%             % add varargin
+%             nVarargs = length(varargin);
+%             if (nVarargs==2)
+%                 obj.offset_x=varargin{1};
+%                 obj.offset_y=varargin{2};
+%             end
             
             
         end

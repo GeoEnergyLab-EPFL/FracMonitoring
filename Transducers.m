@@ -44,7 +44,7 @@ classdef Transducers
         
         function [xyz] = calculate_global_coordinates(obj,platten_list,block_data)
             % platten_list = list of platten objects - max length 6
-            % block_data - astructure describing the size of the block L_E, L_N, L_T  which means
+            % block_data - a Block object  containing the size of the block sizes= L_E, L_N, L_T  which means
             % that the origin of the block coordinates is at the corner (WSB)
             % 
             % loop on number of piezo ...
@@ -79,24 +79,24 @@ classdef Transducers
                         switch (platten_list{p}.face)  
                             case 'N'
                                 n=[0,1,0];
-                                offset = [block_data.L_E/2., block_data.L_N, block_data.L_T/2.];
+                                offset = [block_data.sizes(1)/2., block_data.sizes(2), block_data.sizes(3)/2.];
                                 
                             case 'S'
                                 n=[0,-1,0];
-                                 offset = [block_data.L_E/2.,0., block_data.L_T/2.];
+                                 offset = [block_data.sizes(1)/2.,0., block_data.sizes(3)/2.];
                                  
                             case 'E'
                                 n=[1,0,0];
-                                 offset = [block_data.L_E ,block_data.L_N/2., block_data.L_T/2.];
+                                 offset = [block_data.sizes(1) ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
                             case 'W'
                                 n=[-1,0,0];
-                                 offset = [ 0. ,block_data.L_N/2., block_data.L_T/2.];
+                                 offset = [ 0. ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
                             case 'T'
                                 n=[0,0,1];
-                                offset = [  block_data.L_E/2. ,block_data.L_N/2., block_data.L_T];
+                                offset = [  block_data.sizes(1)/2. ,block_data.sizes(2)/2., block_data.sizes(3)];
                             case 'B'
                                 n=[0,0,-1];
-                                  offset = [  block_data.L_E/2. ,block_data.L_N/2., 0.];
+                                  offset = [  block_data.sizes(1)/2. ,block_data.sizes(2)/2., 0.];
                         end 
                         
                         % create rotation
