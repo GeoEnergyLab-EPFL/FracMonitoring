@@ -5,6 +5,8 @@ function [datapath] = pathbyarchitecture(servername)
 %   server SERVERNAME, 
 %
 % Thomas Blum, Geo-Energy Lab, EPFL, December 2018
+%
+% NEEDS EXTRA CHECKS FOR WINDOWS PLATFORM SUPPORT
 
 if ismac % path on macos
     [~, username] = system('whoami');

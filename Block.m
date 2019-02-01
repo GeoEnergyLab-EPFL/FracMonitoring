@@ -1,18 +1,17 @@
 classdef Block
-
     % class for the description of one block, with position of different
     % plattens
     
-    % he origin of the block coordinates is at the corner (WSB)
+    % the origin of the block coordinates is at the West-South-Bottom corner (WSB)
     
     properties
     
-         L_E=250;
-         L_N=250;%
-         L_T=250;
+         L_E = 250
+         L_N = 250
+         L_T = 250
          sizes = [250, 250, 250]; % in mm
          
-         faces  ; % mapping between faces and platten object -> like 2d array of characters
+         faces(2,6) cell % mapping between faces and platten object -> like 2d array of characters
          
          faces_offset;
           
@@ -20,11 +19,12 @@ classdef Block
     
     methods
     
-        function obj=Block(faces,sizes)
+        % constructor
+        function obj = Block(faces,sizes)
         
             % size - vector of length 
-            obj.sizes= sizes;
-            obj.faces=faces;
+            obj.sizes = sizes;
+            obj.faces = faces;
            
         end
         
