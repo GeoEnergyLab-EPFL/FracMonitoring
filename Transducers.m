@@ -57,7 +57,7 @@ classdef Transducers
         end
         
         % calculate global coordinates (in block reference) of each transducer
-        function [xyz] = calc_global_coord(obj,platten_list,block_data)
+        function xyz = calc_global_coord(obj,platten_list,block_data)
             % platten_list: list of platten objects - max length 6
             % block_data: a Block object  containing the size of the block
             % sizes: L_E, L_N, L_T  which means that the origin of the
@@ -76,11 +76,14 @@ classdef Transducers
                         % get xy in local platten coordinates system 
                         xyloc = platten_list{p}.xy_holes(obj.local_id(i),:); % vector of length 2
                         disp(xyloc);
+                        
+                        % CHANGE TO FACE FROM BLOCK OBJECT
                         disp(platten_list{p}.face);
                         
-                        % add platten offset
-                        xyloc(1) = xyloc(1)+platten_list{p}.offset_x;
-                        xyloc(2) = xyloc(2)+platten_list{p}.offset_y;
+% ONLY AFTER OFFSET ADDED IN PLATTEN CLASS                        
+%                         % add platten offset
+%                         xyloc(1) = xyloc(1)+platten_list{p}.offset_x;
+%                         xyloc(2) = xyloc(2)+platten_list{p}.offset_y;
                         
                         % local coordinates
                         x_l = xyloc(1);
@@ -97,35 +100,29 @@ classdef Transducers
                             case 'N'
                                 n=[0,1,0];
                                 offset = [block_data.sizes(1)/2., block_data.sizes(2), block_data.sizes(3)/2.];
-                                
                             case 'S'
                                 n=[0,-1,0];
                                  offset = [block_data.sizes(1)/2.,0., block_data.sizes(3)/2.];
-                                 
                             case 'E'
                                 n=[1,0,0];
                                  offset = [block_data.sizes(1) ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
                             case 'W'
                                 n=[-1,0,0];
-                                 offset = [ 0. ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
+                                 offset = [0. ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
                             case 'T'
                                 n=[0,0,1];
-                                offset = [  block_data.sizes(1)/2. ,block_data.sizes(2)/2., block_data.sizes(3)];
+                                offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., block_data.sizes(3)];
                             case 'B'
                                 n=[0,0,-1];
-                                  offset = [  block_data.sizes(1)/2. ,block_data.sizes(2)/2., 0.];
+                                  offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., 0.];
                         end 
                         
                         % create rotation
-                         
-                        R = [ platten_list{p}.xloc' ,  platten_list{p}.yloc', n'];
+                        R = [platten_list{p}.xloc',  platten_list{p}.yloc', n'];
                        
-                        
                         % in global aux variables x_g, y_g and z_g
-                        
                         xyz(i,:)= (R*[x_l;y_l;z_l])' + offset ;
                         
-
                     end
                     p=p+1;
                     
@@ -141,6 +138,12 @@ classdef Transducers
       
         end
         
+%         % transducer plotting method
+%         function fighandle = plot_transducer(obj,platten_list,block_data)
+%             xyz = calc_global_coord(obj,platten_list,block_data);
+%             
+%         end
+
     end    
     
 end

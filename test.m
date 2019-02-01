@@ -1,20 +1,22 @@
 
 
-% define platten 
+% create two platten objects
+PlattenA = Platten('A');
+PlattenC = Platten('C');
 
-jojo =Platten('A','N',[1,0,0],[0,0,1])
+% parameters for tranducer object
+transd_serial = [1 2 3 4 5 6 7 8];
+transd_type = {'P' 'P' 'P' 'P' 'S' 'P' 'S' 'S'};
+transd_channel = {'S1' 'R2' 'S3' 'R4' 'S5' 'R6' 'S7' 'R8'};
+transd_locid = [8 9 10 11 12 13 14 15];
+transd_platten = {'A' 'A' 'A' 'A' 'A' 'A' 'A' 'A'};
+% create transducer object
+myTransd = Transducers(transd_serial,transd_type,transd_channel,transd_platten,transd_locid);
 
+% create block object
+myBlock = Block({'B','A';'T','B';'N','E';'S','D';'E','F';'W','C'},[250 250 250]);
 
-%jojo2 =Platten('A','N',[1,0,0],[0,0,1],0.2,0.1)
-
-
-myTrans=Transducers([1,2,3,4,5],['s','s','s','r','r'],[0,1,2,3,4],['A','A','A','A','A'],[1,2,3,4,5]);
-
-Block=struct;
-Block.L_E=25;
-Block.L_N=25;
-Block.L_T=25;
-
-xyz = myTrans.calculate_global_coordinates({jojo},Block)
+% get transducer coordinates
+xyz = myTransd.calc_global_coord({PlattenA,PlattenC},myBlock);
 
 

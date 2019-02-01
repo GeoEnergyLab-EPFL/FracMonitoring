@@ -3,19 +3,16 @@ classdef Platten
     %   Detailed explanation goes here
     
     properties
-        type ; % cross or grid
-        id ;   % id of the block
-        
-        xy_holes;   % positions of the transducer holes in local coordinates
+        type char       % cross or grid
+        id(1,1) char    % id of the block
+        xy_holes(:,2) double     % positions of the transducer holes in local coordinates
     end
-    
     
     properties (Dependent)
         n_holes;
     end
     
     methods
-        
         % constructor
         function obj = Platten(ID) % ,varargin
             
@@ -42,7 +39,6 @@ classdef Platten
                     % write to property
                     obj.xy_holes = [x_tmp, y_tmp];
                     
-                    
                 case {'C','D','E','F'}
                     % it's a grid
                     obj.type='grid';
@@ -52,33 +48,41 @@ classdef Platten
                     dvert1 = 20;    % side platen first vert spacing
                     dvert2 = 30;    % side platen farther vert spacing
                     % compute positions
-                    x_tmp = repmat([-dhoriz 0 dhoriz],1,4);
+                    x_tmp = repmat([-dhoriz 0 dhoriz],1,4)';
                     y_tmp = [ones(1,3)*(dvert1+dvert2), ones(1,3)*dvert1,...
-                        ones(1,3)*-dvert1, ones(1,3)*-(dvert1+dvert2)];
+                        ones(1,3)*-dvert1, ones(1,3)*-(dvert1+dvert2)]';
                     % write to property
                     obj.xy_holes = [x_tmp, y_tmp];
             end
             
-            % get number of objects from length of coordinate property
-            obj.n_holes = length(obj.xy_holes);
-            
-            %             % add varargin
-            %             nVarargs = length(varargin);
-            %             if (nVarargs==2)
-            %                 obj.offset_x=varargin{1};
-            %                 obj.offset_y=varargin{2};
-            %             end
-            
+%             % add varargin
+%             nVarargs = length(varargin);
+%             if (nVarargs==2)
+%                 obj.offset_x = varargin{1};
+%                 obj.offset_y = varargin{2};
+%             end
             
         end
         % end constructor
         
-        function value=get.n_holes(obj)
-            value = size(obj.xy_holes,1);
+        % method for dependant property "n_holes"
+        function value = get.n_holes(obj)
+            value = length(obj.xy_holes);
         end
         
         % METHODS
         % 1 method -> plot platten geometry
+        function fig_handle = plattenplot(obj)
+            fig_handle = figure;
+            plot(obj.xy_holes(:,1),obj.xy_holes(:,2),'ok')
+            hold on
+            % add edges of platten
+            plot([-125 -125],[-125 125],'k')
+            plot([-125 125],[125 125],'k')
+            plot([125 125],[-125 125],'k')
+            plot([-125 125],[-125 -125],'k')
+            axis equal tight
+        end
         
     end
     

@@ -11,10 +11,9 @@ classdef Block
          L_T = 250
          sizes = [250, 250, 250]; % in mm
          
-         faces(2,6) cell % mapping between faces and platten object -> like 2d array of characters
+         faces(6,2) cell % mapping between faces and platten object -> like 2d array of characters
          
-         faces_offset;
-          
+         faces_offset;        
     end
     
     methods
