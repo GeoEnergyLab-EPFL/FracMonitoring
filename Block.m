@@ -26,8 +26,6 @@ classdef Block
         
         % methods -> plot block ?
         
-        
     end
-    
     
 end
