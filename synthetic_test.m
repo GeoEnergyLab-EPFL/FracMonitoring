@@ -1,3 +1,7 @@
+% Numerical simulation of the reflection and transmission of an elastic wave 
+% normal to a fluid-filled layer, and fluid estimation using the feq-domain
+% technique from Groenenboom paper.
+
 close all
 clearvars -EXCEPT P_*
 home
@@ -38,7 +42,7 @@ P0(1) = pinit(1);
 % time n=2 with Lax-wendroff
 for nn = 2
     P1(1)=pinit(nn);
-    for j = 2:length(X)-1;
+    for j = 2:length(X)-1
         P1(j) = P0(j) - C(j)/2 * (Q0(j+1)-Q0(j-1)) + ...
             C(j)^2 /2 *(P0(j-1)-2*P0(j)+P0(j+1)) ;
         Q1(j) = Q0(j) - C(j)/2 * (P0(j+1)-P0(j-1)) + ...
@@ -134,7 +138,7 @@ Fun = sum(abs((U(flow:fhigh,2)*ones(size(H))-(U(flow:fhigh,1)...
 
 % locate min
 [~, hmin] = min(Fun);
-H(hmin)*1E6
+disp(H(hmin)*1E6)
 
 % plot objective function
 figure
@@ -152,7 +156,7 @@ p(1:length(w),1) = w;
 
 % time n=2 with Lax-wendroff
 for nn = 2:2
-    for j = 2:length(X)-1;
+    for j = 2:length(X)-1
         p(nn,j) = p(nn-1,j) - C(j)/2 * (q(nn-1,j+1)-q(nn-1,j-1)) + C(j)^2 /2 *(p(nn-1,j-1)-2*p(nn-1,j)+p(nn-1,j+1)) ;
         q(nn,j) = q(nn-1,j) - C(j)/2 * (p(nn-1,j+1)-p(nn-1,j-1)) + C(j)^2 /2 *(q(nn-1,j-1)-2*q(nn-1,j)+q(nn-1,j+1)) ;
     end
