@@ -6,6 +6,7 @@ classdef Platten
         type char       % cross or grid
         id(1,1) char    % id of the block
         xy_holes(:,2) double     % positions of the transducer holes in local coordinates
+        face(1,1) char
     end
     
     properties (Dependent)
@@ -14,9 +15,14 @@ classdef Platten
     
     methods
         % constructor
-        function obj = Platten(ID) % ,varargin
+        function obj = Platten(ID,face) % ,varargin
             
             obj.id = ID; % platten id
+            if ismember(face,{'N','S','E','W','T','B'})
+                obj.face = face;
+            else
+                disp('Wrong sample face for platten')
+            end
             
             switch ID
                 case {'A','B'}
