@@ -3,23 +3,32 @@ classdef Platten
     %   Detailed explanation goes here
     
     properties
-        type ; % cross or grid
-        id ;   % id of the block
+        type char       % cross or grid
+        id(1,1) char    % id of the block
+        xy_holes(:,2) double     % positions of the transducer holes in local coordinates
+        face(1,1) char
         
-        xy_holes;   % positions of the transducer holes in local coordinates
+        ep_x double; % vector coordinates defining local e_x in the global block system of coordinates
+        ep_y double; % vector coordinates defining local e_y in the global block system of coordinates
+        ep_z double ; % outward normal in the global block system of coordinates (pointing out of the block)
+  
     end
-    
     
     properties (Dependent)
         n_holes;
+        R; % rotation matrix from local to global coord system 
     end
     
     methods
-        
         % constructor
-        function obj = Platten(ID) % ,varargin
+        function obj = Platten(ID,face) % ,varargin
             
             obj.id = ID; % platten id
+            if ismember(face,{'N','S','E','W','T','B'})
+                obj.face = face;
+            else
+                disp('Wrong sample face for platten')
+            end
             
             switch ID
                 case {'A','B'}
@@ -42,7 +51,6 @@ classdef Platten
                     % write to property
                     obj.xy_holes = [x_tmp, y_tmp];
                     
-                    
                 case {'C','D','E','F'}
                     % it's a grid
                     obj.type='grid';
@@ -52,33 +60,71 @@ classdef Platten
                     dvert1 = 20;    % side platen first vert spacing
                     dvert2 = 30;    % side platen farther vert spacing
                     % compute positions
-                    x_tmp = repmat([-dhoriz 0 dhoriz],1,4);
+                    x_tmp = repmat([-dhoriz 0 dhoriz],1,4)';
                     y_tmp = [ones(1,3)*(dvert1+dvert2), ones(1,3)*dvert1,...
-                        ones(1,3)*-dvert1, ones(1,3)*-(dvert1+dvert2)];
+                    ones(1,3)*-dvert1, ones(1,3)*-(dvert1+dvert2)]';
                     % write to property
                     obj.xy_holes = [x_tmp, y_tmp];
             end
             
-            
-            obj.n_holes = size(obj.xy_holes,1);
-            
-            %             % add varargin
-            %             nVarargs = length(varargin);
-            %             if (nVarargs==2)
-            %                 obj.offset_x=varargin{1};
-            %                 obj.offset_y=varargin{2};
-            %             end
-            
-            
+%             % add varargin
+%             nVarargs = length(varargin);
+%             if (nVarargs==2)
+%                 obj.offset_x = varargin{1};
+%                 obj.offset_y = varargin{2};
+%             end
+                    switch (obj.face)
+                            case 'N'
+                                obj.ep_z = [0,1,0];
+                                obj.ep_x=[-1,0,0];
+                                obj.ep_y=[0,0,1]; % local coord vect in global coord system 
+                              
+                            case 'S'
+                                
+                                ep_z = [0,-1,0];ep_x=[1,0,0];ep_y=[0,0,1];
+                                
+                              
+                            case 'E'
+                                
+                                ep_z = [1,0,0];ep_x=[0,1,0];ep_y=[0,0,1];
+                                
+                               
+                            case 'W'
+                                ep_z = [-1,0,0];ep_x=[0,-1,0];ep_y=[0,0,1];
+                                
+                            case 'T'
+                                ep_z = [0,0,1];ep_x=[1,0,0];ep_y=[0,1,0];
+                            case 'B'
+                                ep_z = [0,0,-1];ep_x=[-1,0,0];ep_y=[0,1,0];
+                    end
+                        
+                        % create rotation
+                        R = [ep_x',ep_y',ep_z'];
+                                    
+
+
+
         end
         % end constructor
         
-        function value=get.n_holes(obj)
-            value = size(obj.xy_holes,1);
+        % method for dependant property "n_holes"
+        function value = get.n_holes(obj)
+            value = length(obj.xy_holes);
         end
         
         % METHODS
         % 1 method -> plot platten geometry
+        function fig_handle = plattenplot(obj)
+            fig_handle = figure;
+            plot(obj.xy_holes(:,1),obj.xy_holes(:,2),'ok')
+            hold on
+            % add edges of platten
+            plot([-125 -125],[-125 125],'k')
+            plot([-125 125],[125 125],'k')
+            plot([125 125],[-125 125],'k')
+            plot([-125 125],[-125 -125],'k')
+            axis equal tight
+        end
         
     end
     

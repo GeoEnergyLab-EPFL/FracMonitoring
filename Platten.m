@@ -7,15 +7,21 @@ classdef Platten
         id(1,1) char    % id of the block
         xy_holes(:,2) double     % positions of the transducer holes in local coordinates
         face(1,1) char
+        
+        ep_x double; % vector coordinates defining local e_x in the global block system of coordinates
+        ep_y double; % vector coordinates defining local e_y in the global block system of coordinates
+        ep_z double ; % outward normal in the global block system of coordinates (pointing out of the block)
+        offset ;
     end
     
     properties (Dependent)
         n_holes;
+        R; % rotation matrix from local to global coord system
     end
     
     methods
         % constructor
-        function obj = Platten(ID,face) % ,varargin
+        function obj = Platten(ID,face,block_data) % ,varargin
             
             obj.id = ID; % platten id
             if ismember(face,{'N','S','E','W','T','B'})
@@ -61,12 +67,53 @@ classdef Platten
                     obj.xy_holes = [x_tmp, y_tmp];
             end
             
-%             % add varargin
-%             nVarargs = length(varargin);
-%             if (nVarargs==2)
-%                 obj.offset_x = varargin{1};
-%                 obj.offset_y = varargin{2};
-%             end
+            %             % add varargin
+            %             nVarargs = length(varargin);
+            %             if (nVarargs==2)
+            %                 obj.offset_x = varargin{1};
+            %                 obj.offset_y = varargin{2};
+            %             end
+            switch (obj.face)
+                case 'N'
+                    obj.ep_z = [0,1,0];
+                    obj.ep_x=[-1,0,0];
+                    obj.ep_y=[0,0,1]; % local coord vect in global coord system
+                    obj.offset = [block_data.sizes(1)/2., block_data.sizes(2), block_data.sizes(3)/2.];
+                    
+                case 'S'
+                    
+                    obj.ep_z = [0,-1,0];
+                    obj.ep_x=[1,0,0];
+                    obj.ep_y=[0,0,1];
+                    obj.offset = [block_data.sizes(1)/2.,0., block_data.sizes(3)/2.];
+                    
+                case 'E'
+                    
+                    obj.ep_z = [1,0,0];
+                    obj.ep_x=[0,1,0];
+                    obj.ep_y=[0,0,1];
+                    
+                    obj.offset = [block_data.sizes(1) ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
+                    
+                case 'W'
+                    obj.ep_z = [-1,0,0];
+                    obj.ep_x=[0,-1,0];
+                    obj.ep_y=[0,0,1];
+                    obj.offset = [0. ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
+                    
+                case 'T'
+                    obj.ep_z = [0,0,1];
+                    obj.ep_x=[1,0,0];
+                    obj.ep_y=[0,1,0];
+                    obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., block_data.sizes(3)];
+                    
+                case 'B'
+                    obj.ep_z = [0,0,-1];
+                    obj.ep_x=[-1,0,0];
+                    obj.ep_y=[0,1,0];
+                    obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., 0.];
+                    
+            end
             
         end
         % end constructor
@@ -74,6 +121,11 @@ classdef Platten
         % method for dependant property "n_holes"
         function value = get.n_holes(obj)
             value = length(obj.xy_holes);
+        end
+        
+        function value = get.R(obj)
+            % create rotation
+            value = [obj.ep_x',obj.ep_y',obj.ep_z'];
         end
         
         % METHODS

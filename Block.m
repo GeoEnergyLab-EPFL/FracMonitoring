@@ -21,7 +21,10 @@ classdef Block
         
             % size - vector of length 
             obj.sizes = sizes;
-           
+            obj.L_E=sizes(1);
+            obj.L_N=sizes(2);
+            obj.L_T=sizes(3);
+            
         end
         
         % methods -> plot block ?

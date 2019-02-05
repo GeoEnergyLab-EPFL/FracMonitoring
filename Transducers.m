@@ -57,7 +57,7 @@ classdef Transducers
         end
         
         % calculate global coordinates (in block reference) of each transducer
-        function xyz = calc_global_coord(obj,platten_list,block_data)
+        function xyz = calc_global_coord(obj,platten_list)
             % platten_list: list of platten objects - max length 6
             % block_data: a Block object  containing the size of the block
             % sizes: L_E, L_N, L_T  which means that the origin of the
@@ -96,32 +96,9 @@ classdef Transducers
                         % be careful platten local system is w.r. platten
                         % center
                         disp([' platten face: ', platten_list{p}.face]);
-                        switch (platten_list{p}.face)
-                            case 'N'
-                                n = [0,1,0];
-                                offset = [block_data.sizes(1)/2., block_data.sizes(2), block_data.sizes(3)/2.];
-                            case 'S'
-                                n = [0,-1,0];
-                                offset = [block_data.sizes(1)/2.,0., block_data.sizes(3)/2.];
-                            case 'E'
-                                n = [1,0,0];
-                                offset = [block_data.sizes(1) ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
-                            case 'W'
-                                n = [-1,0,0];
-                                offset = [0. ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
-                            case 'T'
-                                n = [0,0,1];
-                                offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., block_data.sizes(3)];
-                            case 'B'
-                                n = [0,0,-1];
-                                offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., 0.];
-                        end
-                        
-                        % create rotation
-                        R = [platten_list{p}.xloc',  platten_list{p}.yloc', n'];
-                        
+                       
                         % in global aux variables x_g, y_g and z_g
-                        xyz(i,:)= (R*[x_l;y_l;z_l])' + offset ;
+                        xyz(i,:)= ((platten_list{p}.R)*[x_l;y_l;z_l])' + platten_list{p}.offset ;
                         
                     end
                     p=p+1;
