@@ -11,19 +11,16 @@ classdef Block
          L_T = 250
          sizes = [250, 250, 250]; % in mm
          
-         faces(6,2) cell % mapping between faces and platten object -> like 2d array of characters
-         
          faces_offset;        
     end
     
     methods
     
         % constructor
-        function obj = Block(faces,sizes)
+        function obj = Block(sizes)
         
             % size - vector of length 
             obj.sizes = sizes;
-            obj.faces = faces;
            
         end
         
