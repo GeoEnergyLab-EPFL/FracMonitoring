@@ -8,15 +8,15 @@ classdef Platten
         xy_holes(:,2) double     % positions of the transducer holes in local coordinates
         face(1,1) char
         
-        ep_x double; % vector coordinates defining local e_x in the global block system of coordinates
-        ep_y double; % vector coordinates defining local e_y in the global block system of coordinates
-        ep_z double ; % outward normal in the global block system of coordinates (pointing out of the block)
-        offset ;
+        ep_x double % vector coordinates defining local e_x in the global block system of coordinates
+        ep_y double % vector coordinates defining local e_y in the global block system of coordinates
+        ep_z double % outward normal in the global block system of coordinates (pointing out of the block)
+        offset
     end
     
     properties (Dependent)
-        n_holes;
-        R; % rotation matrix from local to global coord system
+        n_holes % number of holes in platten
+        R % rotation matrix from local to global coord system
     end
     
     methods
@@ -76,8 +76,8 @@ classdef Platten
             switch (obj.face)
                 case 'N'
                     obj.ep_z = [0,1,0];
-                    obj.ep_x=[-1,0,0];
-                    obj.ep_y=[0,0,1]; % local coord vect in global coord system
+                    obj.ep_x = [-1,0,0];
+                    obj.ep_y = [0,0,1]; % local coord vect in global coord system
                     obj.offset = [block_data.sizes(1)/2., block_data.sizes(2), block_data.sizes(3)/2.];
                     
                 case 'S'
@@ -97,22 +97,21 @@ classdef Platten
                     
                 case 'W'
                     obj.ep_z = [-1,0,0];
-                    obj.ep_x=[0,-1,0];
-                    obj.ep_y=[0,0,1];
+                    obj.ep_x = [0,-1,0];
+                    obj.ep_y = [0,0,1];
                     obj.offset = [0. ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
                     
                 case 'T'
                     obj.ep_z = [0,0,1];
-                    obj.ep_x=[1,0,0];
-                    obj.ep_y=[0,1,0];
+                    obj.ep_x = [1,0,0];
+                    obj.ep_y = [0,1,0];
                     obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., block_data.sizes(3)];
                     
                 case 'B'
                     obj.ep_z = [0,0,-1];
-                    obj.ep_x=[-1,0,0];
-                    obj.ep_y=[0,1,0];
-                    obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., 0.];
-                    
+                    obj.ep_x = [-1,0,0];
+                    obj.ep_y = [0,1,0];
+                    obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., 0.]; 
             end
             
         end
@@ -129,11 +128,13 @@ classdef Platten
         end
         
         % METHODS
-        % 1 method -> plot platten geometry
-        function fig_handle = plattenplot(obj)
+        % plot platten geometry in 2D
+        function fig_handle = plattenplot2D(obj)
             fig_handle = figure;
             plot(obj.xy_holes(:,1),obj.xy_holes(:,2),'ok')
             hold on
+            % add
+            
             % add edges of platten
             plot([-125 -125],[-125 125],'k')
             plot([-125 125],[125 125],'k')
@@ -141,6 +142,8 @@ classdef Platten
             plot([-125 125],[-125 -125],'k')
             axis equal tight
         end
+        
+        % plot platten geometry in 3D
         
     end
     

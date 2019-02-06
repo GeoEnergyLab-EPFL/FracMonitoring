@@ -1,4 +1,6 @@
 
+% create block object
+myBlock = Block(
 
 % create two platten objects
 PlattenA = Platten('A');
