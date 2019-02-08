@@ -66,19 +66,13 @@ classdef Transducers
             % loop on number of piezo ...
             xyz = zeros(obj.n_transducers,3);
             
-            for i = 1:obj.n_transducers
-                
+            for ii = 1:obj.n_transducers
                 % find corresponding platten
                 p = 1;
                 while p <= length(platten_list)
-                    if (obj.platten(i) == platten_list{p}.id)
-                        
+                    if strcmp(obj.platten(ii),platten_list{p}.id)
                         % get xy in local platten coordinates system
-                        xyloc = platten_list{p}.xy_holes(obj.local_id(i),:); % vector of length 2
-                        disp(xyloc);
-                        
-                        % CHANGE TO FACE FROM BLOCK OBJECT
-                        disp(platten_list{p}.face);
+                        xyloc = platten_list{p}.xy_holes(obj.local_id(ii)+1,:); % vector of length 2
                         
                         % ONLY AFTER OFFSET ADDED IN PLATTEN CLASS
                         %                         % add platten offset
@@ -89,17 +83,10 @@ classdef Transducers
                         x_l = xyloc(1);
                         y_l = xyloc(2);
                         z_l = 0.;
-                        % create global
-                        % 1 get face normal
-                        
-                        % add offset from platten position....
-                        % be careful platten local system is w.r. platten
-                        % center
-                        disp([' platten face: ', platten_list{p}.face]);
                        
-                        % in global aux variables x_g, y_g and z_g
-                        xyz(i,:)= ((platten_list{p}.R)*[x_l;y_l;z_l])' + platten_list{p}.offset ;
-                        
+                        % in global coordinates
+                        xyz(ii,:)= ((platten_list{p}.R)*[x_l;y_l;z_l])' + platten_list{p}.offset ;
+                        break
                     end
                     p=p+1;
                     
@@ -108,7 +95,7 @@ classdef Transducers
                 % error if platten not found in list
                 if (p>length(platten_list))
                     disp('transducers location NOT found !! - inconsistent data');
-                    xyz(i,:)= [-999.,-999.,-999.];
+                    xyz(ii,:)= [-999.,-999.,-999.];
                 end
                 
             end
