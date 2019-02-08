@@ -1,10 +1,18 @@
+clearvars
+home
 
 % create block object
-myBlock = Block(
+myBlock = SampleBlock([250 250 250]);
 
 % create two platten objects
-PlattenA = Platten('A');
-PlattenC = Platten('C');
+PlattenA = Platten('A','B',myBlock);
+PlattenC = Platten('C','W',myBlock);
+
+figA = plattenplot2D(PlattenA);
+figC = plattenplot2D(PlattenC);
+
+fig3D = plattenplot3D(PlattenA,myBlock);
+plattenplot3D(PlattenC,myBlock,fig3D);
 
 % parameters for tranducer object
 transd_serial = [1 2 3 4 5 6 7 8];
@@ -15,8 +23,6 @@ transd_platten = {'A' 'A' 'A' 'A' 'A' 'A' 'A' 'A'};
 % create transducer object
 myTransd = Transducers(transd_serial,transd_type,transd_channel,transd_platten,transd_locid);
 
-% create block object
-myBlock = Block({'B','A';'T','B';'N','E';'S','D';'E','F';'W','C'},[250 250 250]);
 
 % get transducer coordinates
 xyz = myTransd.calc_global_coord({PlattenA,PlattenC},myBlock);

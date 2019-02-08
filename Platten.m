@@ -4,7 +4,7 @@ classdef Platten
     
     properties
         type char       % cross or grid
-        id(1,1) char    % id of the block
+        id(1,1) char    % id of the platten
         xy_holes(:,2) double     % positions of the transducer holes in local coordinates
         face(1,1) char
         
@@ -39,7 +39,8 @@ classdef Platten
                     dcross = 18;    % top platen cross spacing
                     ddiag1 = 34;    % top platen first diag spacing
                     ddiag2 = 28;    % top platen additional diag spacing
-                    % compute positions
+                    % compute positions in patten frame of reference,
+                    % origin is center of platten
                     x_tmp = [zeros(1,10), [5 4 3 2 1]*dcross, -[1 2 3 4 5]*dcross,...
                         [-(ddiag1+2*ddiag2) -(ddiag1+ddiag2) -ddiag1 ddiag1 ddiag1+ddiag2,...
                         ddiag1+2*ddiag2 -(ddiag1+2*ddiag2) -(ddiag1+ddiag2) -ddiag1 ddiag1,...
@@ -111,7 +112,7 @@ classdef Platten
                     obj.ep_z = [0,0,-1];
                     obj.ep_x = [-1,0,0];
                     obj.ep_y = [0,1,0];
-                    obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., 0.]; 
+                    obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., 0.];
             end
             
         end
@@ -129,11 +130,24 @@ classdef Platten
         
         % METHODS
         % plot platten geometry in 2D
-        function fig_handle = plattenplot2D(obj)
-            fig_handle = figure;
+        function fig_handle = plattenplot2D(obj,varargin)
+            % open figure from passed handle if it exists
+            if ~isempty(varargin)
+                if isgraphics(varargin{1})
+                    fig_handle = figure(varargin{1});
+                    hold on
+                else
+                    fig_handle = figure;
+                end
+            else
+                fig_handle = figure;
+            end
             plot(obj.xy_holes(:,1),obj.xy_holes(:,2),'ok')
             hold on
-            % add
+            % add hole numbering
+            holetxt = cellstr(num2str((0:(obj.n_holes-1))'));
+            txtoffset = 2;
+            text(obj.xy_holes(:,1)+txtoffset,obj.xy_holes(:,2),holetxt)
             
             % add edges of platten
             plot([-125 -125],[-125 125],'k')
@@ -144,6 +158,36 @@ classdef Platten
         end
         
         % plot platten geometry in 3D
+        function fig_handle = plattenplot3D(obj,block_data,varargin)
+            % compute 3D locations
+            xyz_loc = (obj.R*[obj.xy_holes(:,1), obj.xy_holes(:,2),...
+                zeros(size(obj.xy_holes(:,1)))]')'+obj.offset;
+            
+            % open figure from passed handle if it exists
+            if ~isempty(varargin)
+                if isgraphics(varargin{1})
+                    fig_handle = figure(varargin{1});
+                else
+                    fig_handle = figure;
+                end
+            else
+                fig_handle = figure;
+            end
+            hold on
+            % plot location of transducer holes for platten object
+            plot3(xyz_loc(:,1),xyz_loc(:,2),xyz_loc(:,3),'ok')
+            % add hole numbering
+            holetxt = cellstr(num2str((0:(obj.n_holes-1))'));
+            %txtoffset = 2;
+            text(xyz_loc(:,1),xyz_loc(:,2),xyz_loc(:,3),holetxt)
+            % add block edges
+            plot_cuboid(block_data.sizes,[0 0 0],fig_handle)
+            axis equal tight
+            % add platten letter ID in top-left corner of outer platten
+            % face (as is physically stamped)
+            letterIDpos = (obj.R*[-100 100 0]')'+obj.offset;
+            text(letterIDpos(1),letterIDpos(2),letterIDpos(3),obj.id)
+        end
         
     end
     
