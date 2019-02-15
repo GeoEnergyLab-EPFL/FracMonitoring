@@ -3,22 +3,20 @@ classdef Transducers
     %
     
     properties
-        
         serial(:,1) int32   % vector containing transducer serial numbers
         type(:,1) char      % vector containing either 'P' or 'S'
         channel(:,1) string % vector string, how the transducers are used (for example "S24")
         platten(:,1) char   % vector containing the platten ID on which the transducer is
         local_id(:,1) int32 % vector containing the hole ID of the transducer
-        % add orientation for S transducers???
-        
+        orientation(:,1)    % vector containing the orientation of the transducer 
+        % cable for Shear transducer, angle in radians with respect to the 
+        % platten local coordinate system
     end
     
     properties (Dependent)
-        
         n_transducers
         n_sources
         n_receivers
-        
     end
     
     
@@ -42,29 +40,33 @@ classdef Transducers
         end
         
         % methods for dependant properties
+        % number of transducers
         function val = get.n_transducers(obj)
             val = length(obj.serial);
         end
         
+        % number of sources
         function val = get.n_sources(obj)
             channelchar = char(obj.channel);
             val = sum(ismember(channelchar(:,1),'S'));
         end
         
+        % number of receivers
         function val = get.n_receivers(obj)
             channelchar = char(obj.channel);
             val = sum(ismember(channelchar(:,1),'R'));
         end
         
+        % METHODS
         % calculate global coordinates (in block reference) of each transducer
-        function xyz = calc_global_coord(obj,platten_list)
+        function xyzTransd = calc_global_coord(obj,platten_list)
             % platten_list: list of platten objects - max length 6
             % block_data: a Block object  containing the size of the block
             % sizes: L_E, L_N, L_T  which means that the origin of the
             % block coordinates is at the corner (WSB)
             %
             % loop on number of piezo ...
-            xyz = zeros(obj.n_transducers,3);
+            xyzTransd = zeros(obj.n_transducers,3);
             
             for ii = 1:obj.n_transducers
                 % find corresponding platten
@@ -85,7 +87,7 @@ classdef Transducers
                         z_l = 0.;
                        
                         % in global coordinates
-                        xyz(ii,:)= ((platten_list{p}.R)*[x_l;y_l;z_l])' + platten_list{p}.offset ;
+                        xyzTransd(ii,:)= ((platten_list{p}.R)*[x_l;y_l;z_l])' + platten_list{p}.offset ;
                         break
                     end
                     p=p+1;
@@ -95,18 +97,57 @@ classdef Transducers
                 % error if platten not found in list
                 if (p>length(platten_list))
                     disp('transducers location NOT found !! - inconsistent data');
-                    xyz(ii,:)= [-999.,-999.,-999.];
+                    xyzTransd(ii,:)= [-999.,-999.,-999.];
                 end
                 
             end
             
         end
         
-        %         % transducer plotting method
-        %         function fighandle = plot_transducer(obj,platten_list,block_data)
-        %             xyz = calc_global_coord(obj,platten_list,block_data);
-        %
-        %         end
+        % 3D plot of the transducer locations
+        function fig_handle = transducerplot3D(obj,platten_list,varargin)
+            % open figure from passed handle if it exists
+            % optional argument 1 is figure handle
+            % optional argument 2 is plotting style
+            if ~isempty(varargin)
+                narg = length(varargin);
+                if isgraphics(varargin{1})
+                    fig_handle = figure(varargin{1});
+                else
+                    fig_handle = figure;
+                end
+            else
+                fig_handle = figure;
+            end
+            hold on
+            xyzTransd = calc_global_coord(obj,platten_list);
+            plotstyle = 'b.';
+            if narg>=2
+                if ischar(varargin{2})
+                    plotstyle = varargin{2};
+                end
+            end
+            plot3(xyzTransd(:,1),xyzTransd(:,2),xyzTransd(:,3),plotstyle)
+        end
+        
+        % distances for all source-receiver pairs
+        function dists = transducerdists(obj,platten_list)
+            xyzTransd = calc_global_coord(obj,platten_list);
+            dx = xyzTransd(:,1)-xyzTransd(:,1)';
+            dy = xyzTransd(:,2)-xyzTransd(:,2)';
+            dz = xyzTransd(:,3)-xyzTransd(:,3)';
+            dists = sqrt(dx.^2+dy.^2+dz.^2);
+        end
+        
+        % directions of rays for all source-receiver pairs
+        function directions = transducerdirections(obj,platten_list)
+            xyzTransd = calc_global_coord(obj,platten_list);
+            dx = xyzTransd(:,1)-xyzTransd(:,1)'; % diff in x direction
+            dy = xyzTransd(:,2)-xyzTransd(:,2)'; % diff in y direction
+            dz = xyzTransd(:,3)-xyzTransd(:,3)'; % diff in z direction
+            dirtmp = cat(3,dx,dy,dz); % array with 3D differences
+            directions = dirtmp./vecnorm(A,2,3); % normalized
+        end
         
     end
     

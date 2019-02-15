@@ -25,4 +25,6 @@ myTransd = Transducers(transd_serial,transd_type,transd_channel,transd_platten,t
 
 % get transducer coordinates
 xyz = myTransd.calc_global_coord({PlattenA,PlattenC});
-plot3(xyz(:,1),xyz(:,2),xyz(:,3),'b.')
+
+% plot transducer locations
+transducerplot3D(myTransd,{PlattenA,PlattenC},fig3D)

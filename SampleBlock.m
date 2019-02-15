@@ -22,8 +22,7 @@ classdef SampleBlock
             obj.L_T=sizes(3);
         end
         
-        % methods 
-        
+        % METHODS
         % plot block geometry in 3D
         function fig_handle = blockplot3D(obj,varargin)
             % open figure from passed handle if it exists

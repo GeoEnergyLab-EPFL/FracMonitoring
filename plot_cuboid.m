@@ -11,11 +11,11 @@ function fig_handle = plot_cuboid(lengths,origin,varargin)
 %   graphical object with the handle FIGHANDLE
 
 % create vertices for unit cube
-xyz = [0 0 0; 1 0 0; 1 1 0; 0 1 0; 0 0 1; 1 0 1; 1 1 1; 0 1 1];
+tmp1 = [0 0 0; 1 0 0; 1 1 0; 0 1 0; 0 0 1; 1 0 1; 1 1 1; 0 1 1];
 % stretch to proper size
-xyz = xyz.*lengths(:)';
+tmp2 = tmp1.*lengths(:)';
 % shift to proper origin
-xyz = bsxfun(@plus,xyz,origin(:)');
+xyzVertices = tmp2+origin(:)';
 % create face sequence for patch
 faces = [1 2 3 4 1 5 6 2 6 7 3 7 8 4 8 5];
 
@@ -31,7 +31,7 @@ else
     fig_handle = figure;
 end
 % plot the cuboid
-patch('Faces',faces,'Vertices',xyz,'EdgeColor','black','FaceColor',...
+patch('Faces',faces,'Vertices',xyzVertices,'EdgeColor','black','FaceColor',...
     'none','LineWidth',2)
 view(3)
 end

@@ -1,6 +1,8 @@
 classdef Platten
     % A class for the definition of platten and their position during an experiment
-    %   Detailed explanation goes here
+    % This class defines the platten object, that includes info on the
+    % physical platten and hole positions as well as how the platten is
+    % used in the global context of the reaction frame
     
     properties
         type char       % cross or grid
@@ -41,13 +43,15 @@ classdef Platten
                     ddiag2 = 28;    % top platen additional diag spacing
                     % compute positions in patten frame of reference,
                     % origin is center of platten
-                    x_tmp = [zeros(1,10), [5 4 3 2 1]*dcross, -[1 2 3 4 5]*dcross,...
-                        [-(ddiag1+2*ddiag2) -(ddiag1+ddiag2) -ddiag1 ddiag1 ddiag1+ddiag2,...
-                        ddiag1+2*ddiag2 -(ddiag1+2*ddiag2) -(ddiag1+ddiag2) -ddiag1 ddiag1,...
-                        ddiag1+ddiag2 ddiag1+2*ddiag2]/sqrt(2)]';
-                    y_tmp = [[5 4 3 2 1]*dcross, -[1 2 3 4 5]*dcross, zeros(1,10),...
-                        [(ddiag1+2*ddiag2) (ddiag1+ddiag2) ddiag1 ddiag1 ddiag1+ddiag2,...
-                        ddiag1+2*ddiag2 -(ddiag1+2*ddiag2) -(ddiag1+ddiag2) -ddiag1 -ddiag1,...
+                    x_tmp = [zeros(1,10), [5 4 3 2 1]*dcross,...
+                        -[1 2 3 4 5]*dcross, [-(ddiag1+2*ddiag2)...
+                        -(ddiag1+ddiag2) -ddiag1 ddiag1 ddiag1+ddiag2,...
+                        ddiag1+2*ddiag2 -(ddiag1+2*ddiag2) -(ddiag1+ddiag2)...
+                        -ddiag1 ddiag1, ddiag1+ddiag2 ddiag1+2*ddiag2]/sqrt(2)]';
+                    y_tmp = [[5 4 3 2 1]*dcross, -[1 2 3 4 5]*dcross,...
+                        zeros(1,10), [(ddiag1+2*ddiag2) (ddiag1+ddiag2)...
+                        ddiag1 ddiag1 ddiag1+ddiag2, ddiag1+2*ddiag2...
+                        -(ddiag1+2*ddiag2) -(ddiag1+ddiag2) -ddiag1 -ddiag1,...
                         -(ddiag1+ddiag2) -(ddiag1+2*ddiag2)]/sqrt(2)]';
                     % write to property
                     obj.xy_holes = [x_tmp, y_tmp];
@@ -74,12 +78,14 @@ classdef Platten
             %                 obj.offset_x = varargin{1};
             %                 obj.offset_y = varargin{2};
             %             end
+            
             switch (obj.face)
                 case 'N'
                     obj.ep_z = [0,1,0];
                     obj.ep_x = [-1,0,0];
                     obj.ep_y = [0,0,1]; % local coord vect in global coord system
-                    obj.offset = [block_data.sizes(1)/2., block_data.sizes(2), block_data.sizes(3)/2.];
+                    obj.offset = [block_data.sizes(1)/2., block_data.sizes(2),...
+                        block_data.sizes(3)/2.];
                     
                 case 'S'
                     
@@ -94,7 +100,8 @@ classdef Platten
                     obj.ep_x=[0,1,0];
                     obj.ep_y=[0,0,1];
                     
-                    obj.offset = [block_data.sizes(1) ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
+                    obj.offset = [block_data.sizes(1) ,block_data.sizes(2)/2.,...
+                        block_data.sizes(3)/2.];
                     
                 case 'W'
                     obj.ep_z = [-1,0,0];
@@ -106,29 +113,33 @@ classdef Platten
                     obj.ep_z = [0,0,1];
                     obj.ep_x = [1,0,0];
                     obj.ep_y = [0,1,0];
-                    obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., block_data.sizes(3)];
+                    obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2.,...
+                        block_data.sizes(3)];
                     
                 case 'B'
                     obj.ep_z = [0,0,-1];
                     obj.ep_x = [-1,0,0];
                     obj.ep_y = [0,1,0];
-                    obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2., 0.];
+                    obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2.,...
+                        0.];
             end
             
         end
         % end constructor
         
-        % method for dependant property "n_holes"
+        
+        % METHODS
+        % method for dependant property "n_holes" number of holes
         function value = get.n_holes(obj)
             value = length(obj.xy_holes);
         end
         
+        % method for dependant property "R" rotation matrix
         function value = get.R(obj)
             % create rotation
             value = [obj.ep_x',obj.ep_y',obj.ep_z'];
         end
         
-        % METHODS
         % plot platten geometry in 2D
         function fig_handle = plattenplot2D(obj,varargin)
             % open figure from passed handle if it exists
