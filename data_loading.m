@@ -5,12 +5,12 @@ function  dataout = data_loading(filename,sequences,sources,receivers,np,nr,ns,v
 % YET CODED)
 % return a 4D array
 %  d-1 sequences
-%  d-2 source
-%  d-3 receivers
-%  d-4 time
+%  d-2 time
+%  d-3 source
+%  d-4 receivers
 
 % size in bytes of one single acquisition sequence
-seqsize = np*ns*nr*8;
+seqsize = ns*nr*np*8;
 
 % open bin data file and read header size (recorded in first double in bin)
 fid = fopen(filename,'r');
@@ -43,7 +43,7 @@ for ii = 1:length(sequences)
 end
 fclose(fid);
 % reshape data array to 4D with dimensions in intuitive order
-datatmp2 = permute(reshape(datatmp,qq,np,nr,ns),[1 4 3 2]);
-dataout = datatmp2(:,sources,receivers,:);
+datatmp2 = permute(reshape(datatmp,qq,np,nr,ns),[1 2 4 3]);
+dataout = datatmp2(:,:,sources,receivers);
 
 end
