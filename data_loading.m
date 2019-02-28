@@ -1,4 +1,4 @@
-function  dataout = data_loading(filename,sequences,sources,receivers,np,nr,ns,varargin)
+function  [dataout, varargout] = data_loading(filename,sequences,sources,receivers,np,nr,ns,varargin)
 % function to load a set of sequences, sources, receivers data
 
 % in varargin min-max time to reduce the number of data pts per traces (NOT
@@ -45,5 +45,5 @@ fclose(fid);
 % reshape data array to 4D with dimensions in intuitive order
 datatmp2 = permute(reshape(datatmp,qq,np,nr,ns),[1 2 4 3]);
 dataout = datatmp2(:,:,sources,receivers);
-
+varargout = {nq};
 end
