@@ -1,4 +1,4 @@
-function  [dataout, varargout] = data_loading(filename,sequences,sources,receivers,np,nr,ns,varargin)
+function  [dataout, varargout] = data_loading(filename,sequences,sources,receivers,varargin)
 % function to load a set of sequences, sources, receivers data
 
 % in varargin min-max time to reduce the number of data pts per traces (NOT
@@ -8,6 +8,18 @@ function  [dataout, varargout] = data_loading(filename,sequences,sources,receive
 %  d-2 time
 %  d-3 source
 %  d-4 receivers
+
+% check if header file exists
+fjson =  strrep(filename,'.bin','.json');
+if ~isfile(fjson)
+        disp('no corresponding header file found')
+    return
+end
+% get active acoustic info from header
+[~,~,jsonhdr] = load_header(fjson);
+np = jsonhdr.ActiveAcousticInfos.NumberOfPoints;
+ns = jsonhdr.ActiveAcousticInfos.NumberOfSources;
+nr = jsonhdr.ActiveAcousticInfos.NumberOfReceivers;
 
 % size in bytes of one single acquisition sequence
 seqsize = ns*nr*np*8;
@@ -37,7 +49,7 @@ fseek(fid,hdrsize+(sequences(1)-1)*seqsize,'bof');
 % create empty array
 datatmp = zeros(qq,np,nr*ns);
 for ii = 1:length(sequences)
-    % set pointer to beginning of  sequence
+    % set pointer to beginning of sequence
     fseek(fid,hdrsize+(sequences(ii)-1)*seqsize,'bof');
     datatmp(ii,:,:) = fread(fid,[np,ns*nr],'double');
 end
