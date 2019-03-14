@@ -10,17 +10,21 @@
 % output - flag for heterogeneity..... 
 
  
+
+
+
 %% Function to measure sound velocity by reading two signals source-receiver at the begining
 
-function [soundVelocity] = velocity_measurements(filepath)
+function [soundVelocity] = velocity_measurements(dataRefPath,dataSetPath)
 
-% just call fuction like velocity_measurements('../data/19-01-29/133723.bin')
+% just call fuction like velocity_measurements('../data/19-01-11/163814','../data/19-01-29/133723')
+
 
 %% TODO:
-% rewrite in function
-% calc for all pairs
+% calc for all pairs P & S waves
 % average for each direction
-% make soundVelocity - global variable, just function call
+% Fatima's calculation
+% hf-experiments and Linux root
 % a lot..
 
 %% Length between source and receiver
@@ -29,10 +33,10 @@ length = 250; % normally from SampleBlock -- TBD
 
     
 %% load data in dataSet, 16 receivers
-
+dataSetFilePath = strcat(dataSetPath,'.bin')
 %dataSet = cell(0,0) % need to be updated for cell
-for n = 1:16 % for now only 1 direction - top/bottom -- TBD
-    dataSet{n} = load_data(filepath,1,1,1); %data path
+for n = 1:16 % for now only 1 direction - top/bottom -- others TBD
+    dataSet{n} = load_data(dataSetFilePath,1,1,n); %data path !!! N !!!
 end
 
 
@@ -48,11 +52,11 @@ for i = 1:7999
 end
 
 %% reference signal read (without a sample), p-wave
-
-dataRef = load_data('../data/19-01-11/163814.bin',1,1,1)
+dataRefFilePath = strcat(dataRefPath,'.bin')
+dataRef = load_data(dataRefFilePath,1,1,1);
 
 % figure
-% plot(dataTime(:,:),abs(dataRef))
+% plot(dataTime*1E6,dataRef,dataTime*1E6,abs(hilbert(dataRef)))
 
 
 %% Check plot for dataSet
@@ -60,17 +64,31 @@ dataRef = load_data('../data/19-01-11/163814.bin',1,1,1)
 % plot(dataTime(:,:),dataSet{1})
 
 
-%% Finf t_propagation with xcorr dataSet and dataRef
+%% Find t_propagation with xcorr dataSet and dataRef
+
+% TBD xcorr for frame dataSet
+% cut dataRef and dataSet
+Tmin = 2200;
+Tmax = 3000-1;
+dataRefPart = dataRef(:,1:1000-1);
+dataSetPart = dataSet{1,1}; dataSetPart = dataSetPart(:,Tmin:Tmax)
+
+% figure
+% plot(dataTime(:,1:1000-1),abs(dataRefPart))
+
+% figure
+% plot(dataTime(:,Tmin:Tmax),dataSetPart)
+
 
 [acor, lag] = xcorr(dataSet{1}, dataRef);
 
 % Figure check
 % figure % plot xcorr to lag
-% plot (lag*dt,abs(acor))
+% plot (lag*dt,acor)
 
 %t_propagation
-[~,i] = max(abs(acor)); % find max of correlation, i = position
-lagDiff = lag(i); [~,x]=size(lag); x=(x+1)/2; 
+[~,i] = max(acor); % find max of correlation, i = position
+%lagDiff = lag(i); [~,x]=size(lag); x=(x+1)/2; 
 t_propagation = lag(i)*dt; % lagTime = timepropagation
 
 %% Velocity mesasurment
@@ -78,6 +96,40 @@ t_propagation = lag(i)*dt; % lagTime = timepropagation
 length = 250
 
 soundVelocity = length/(1000*t_propagation) % m/s
+
+
+%% TEST xcorr part
+
+% xcorr with dataRefPart and dataSetPart
+
+[acorPart, lagPart] = xcorr(dataSetPart, dataRefPart);
+
+% Figure check
+% figure % plot xcorr to lag
+% plot (lagPart*dt,acorPart)
+
+%t_propagation
+[~,j] = max(acorPart); % find max of correlation, i = position
+%lagDiff = lag(i); [~,x]=size(lag); x=(x+1)/2; 
+t_propagationPart = (Tmin+lagPart(j))*dt; % lagTime = timepropagation
+
+soundVelocityPart = length/(1000*(t_propagationPart)) % m/s
+
+
+%% Check with GI input
+
+
+figure
+plot(dataTime*1E6,dataSet{1}*10^4)
+hold on
+plot(dataTime*1E6,dataRef*10^3)
+xlim([0,60])
+xlabel('Time, \mus')
+ylabel('Amplitude, mV')
+
+[x,y] = ginput(2)
+t_propagationGI = abs(x(2) - x(1))
+soundVelocityGI = length*1000/t_propagationGI % m / timeScale
 
 end
     
@@ -91,6 +143,7 @@ end
  % DO NOT LOOK BELOW %
 
 % % % % % % % % % % % % 
+
 
 %% 1 solution = lag = time arrival (signal, ref, [t_min, t_max]) - take global max in the time sequence
 
