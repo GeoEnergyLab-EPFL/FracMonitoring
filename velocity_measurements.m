@@ -1,47 +1,47 @@
-%function [Vp,Vs]=velocity_measurements()
-% TODO -> write code - First AS a script and then define the proper API
-%
-% options- isotropy, TI, etc.
-
-% steps
-% - load data
-% - pick
-% -  
-% output - flag for heterogeneity..... 
-
- 
-
-
 
 %% Function to measure sound velocity by reading two signals source-receiver at the begining
 
-function [soundVelocity] = velocity_measurements(dataRefPath,dataSetPath)
 
-% just call fuction like velocity_measurements('../data/19-01-11/163814','../data/19-01-29/133723')
+function [soundVelocity, soundVelocityPart, soundVelocityGI] = ...
+    velocity_measurements(dataRefPath,dataSetPath,sequences,sources,receivers, Tmin, Tmax)
 
+% NOW working for one-one S-R pair
+% Ref signal:Swave = 162209, Pwave = 163814
+
+% HOWTO call:
+% EXAMPLE: [soundVelocity, soundVelocityPart, soundVelocityGI] = ... 
+%     velocity_measurements('../data/19-01-11/163814', '../data/19-01-29/133723', 1, 1, 1, 42, 55)
+% 
+% (dataRefPath,dataSetPath,sequences,sources,receivers, Tmin, Tmax)
+% dataRefPath -- path of the dataset, without an extantion
+% dataSetPath -- path of the dataset, without an extantion
+% sequences -- # of sequences in the dataSet
+% sources -- # of source in the dataSet
+% receivers -- # of receiver in the dataSet
+% Tmin -- start of a timeframe for a direct signal, \mus
+% Tmax -- end of a timeframe for a direct signal, \mus
 
 %% TODO:
-% calc for all pairs P & S waves
+% calc for all pairs P & S waves [Vp,Vs]=velocity_measurements()
 % average for each direction
-% Fatima's calculation
 % hf-experiments and Linux root
-% a lot..
 
 %% Length between source and receiver
    
 length = 250; % normally from SampleBlock -- TBD
 
     
-%% load data in dataSet, 16 receivers
+%% load data in dataSet
 dataSetFilePath = strcat(dataSetPath,'.bin')
 %dataSet = cell(0,0) % need to be updated for cell
-for n = 1:16 % for now only 1 direction - top/bottom -- others TBD
-    dataSet{n} = load_data(dataSetFilePath,1,1,n); %data path !!! N !!!
-end
+%for n = 1:16 % for now only 1 pair -- all others per each side TBD
+    dataSet{1} = load_data(dataSetFilePath,sequences,sources,receivers); %data path !!! N !!!
+%end
 
 
-%take time step (dt) for data
-[~, ~, jsonhdr] = load_header('../data/19-01-29/133723.json'); % read from header
+%take time step (dt) for data -- normally header -- TBD
+dataSetJsonPath = strcat(dataSetPath,'.json')
+[~, ~, jsonhdr] = load_header(dataSetJsonPath); % read from header
 Fs = jsonhdr.ActiveAcousticInfos.SamplingFrequency_MHz_*1E6; %freq of measurements 
 dt = 1/Fs;  % time step
 
@@ -51,39 +51,27 @@ for i = 1:7999
     dataTime(:,i+1) = dataTime(:,i)+dt;
 end
 
-%% reference signal read (without a sample), p-wave
+%% reference signal read (without a sample)
 dataRefFilePath = strcat(dataRefPath,'.bin')
 dataRef = load_data(dataRefFilePath,1,1,1);
 
-% figure
+% figure % plot dataRef
+% disp('reference signal read, source')
 % plot(dataTime*1E6,dataRef,dataTime*1E6,abs(hilbert(dataRef)))
 
 
-%% Check plot for dataSet
-% figure
-% plot(dataTime(:,:),dataSet{1})
+% figure % plot dataSet
+% disp('plot for dataSet, receiver')
+% plot(dataTime*1E6,dataSet{1})
 
 
-%% Find t_propagation with xcorr dataSet and dataRef
-
-% TBD xcorr for frame dataSet
-% cut dataRef and dataSet
-Tmin = 2200;
-Tmax = 3000-1;
-dataRefPart = dataRef(:,1:1000-1);
-dataSetPart = dataSet{1,1}; dataSetPart = dataSetPart(:,Tmin:Tmax)
-
-% figure
-% plot(dataTime(:,1:1000-1),abs(dataRefPart))
-
-% figure
-% plot(dataTime(:,Tmin:Tmax),dataSetPart)
-
+%% Find t_propagation and Velocity with xcorr dataSet and dataRef
 
 [acor, lag] = xcorr(dataSet{1}, dataRef);
 
-% Figure check
+% % Figure check
 % figure % plot xcorr to lag
+% disp('Xcor plot')
 % plot (lag*dt,acor)
 
 %t_propagation
@@ -91,41 +79,67 @@ dataSetPart = dataSet{1,1}; dataSetPart = dataSetPart(:,Tmin:Tmax)
 %lagDiff = lag(i); [~,x]=size(lag); x=(x+1)/2; 
 t_propagation = lag(i)*dt; % lagTime = timepropagation
 
-%% Velocity mesasurment
-
-length = 250
-
+% Velocity
 soundVelocity = length/(1000*t_propagation) % m/s
 
+%% PART: Find t_propagation and Velocity with xcorr dataSetPart and dataRefPart
 
-%% TEST xcorr part
+% set Tmin and Tmax
+Tmin = Tmin*1E-6/dt; % SET Tmin for dataSet <--
+Tmax = Tmax*1E-6/dt; % SET Tmax for dataSet <--
+
+% take part of dataSet and dataRef
+dataRefPart = dataRef(:,1:1000-1);
+dataSetPart = dataSet{1,1}; 
+dataSetPart = dataSetPart(:,round(Tmin):round(Tmax));
+
+
+% PLOT dataSet + dataSetPart on 1 figure
+figure % plot dataSet
+plot(dataTime*1E6,dataSet{1})
+hold on
+plot(dataTime(:,round(Tmin):round(Tmax))*1E6,dataSetPart,'.r')
+legend('dataSet','dataSetPart')
+title('dataSet + dataSetPart')
+
+
+% figure % plot dataRefPart
+% disp('Xcor part, dataRefPart')
+% plot(dataTime(:,1:1000-1),dataRefPart)
+
+% figure % plot dataSetPart
+% plot(dataTime(:,Tmin:Tmax),dataSetPart)
+
 
 % xcorr with dataRefPart and dataSetPart
-
 [acorPart, lagPart] = xcorr(dataSetPart, dataRefPart);
 
 % Figure check
-% figure % plot xcorr to lag
-% plot (lagPart*dt,acorPart)
+figure % plot xcorr to lag
+disp('Xcor plot, PART')
+plot (lagPart*dt,acorPart)
 
 %t_propagation
 [~,j] = max(acorPart); % find max of correlation, i = position
 %lagDiff = lag(i); [~,x]=size(lag); x=(x+1)/2; 
 t_propagationPart = (Tmin+lagPart(j))*dt; % lagTime = timepropagation
 
+% VelocityPart
 soundVelocityPart = length/(1000*(t_propagationPart)) % m/s
 
 
 %% Check with GI input
 
-
-figure
+figure(gcf)
+disp('GI input')
 plot(dataTime*1E6,dataSet{1}*10^4)
 hold on
 plot(dataTime*1E6,dataRef*10^3)
-xlim([0,60])
+xlim([0,100])
 xlabel('Time, \mus')
 ylabel('Amplitude, mV')
+legend('dataSet','dataRef')
+title('dataSet + dataRef')
 
 [x,y] = ginput(2)
 t_propagationGI = abs(x(2) - x(1))
