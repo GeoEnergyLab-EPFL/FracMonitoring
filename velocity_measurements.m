@@ -95,12 +95,12 @@ dataSetPart = dataSetPart(:,round(Tmin):round(Tmax));
 
 
 % PLOT dataSet + dataSetPart on 1 figure
-figure % plot dataSet
-plot(dataTime*1E6,dataSet{1})
-hold on
-plot(dataTime(:,round(Tmin):round(Tmax))*1E6,dataSetPart,'.r')
-legend('dataSet','dataSetPart')
-title('dataSet + dataSetPart')
+% figure % plot dataSet
+% plot(dataTime*1E6,dataSet{1})
+% hold on
+% plot(dataTime(:,round(Tmin):round(Tmax))*1E6,dataSetPart,'.r')
+% legend('dataSet','dataSetPart')
+% title('dataSet + dataSetPart')
 
 
 % figure % plot dataRefPart
@@ -115,9 +115,9 @@ title('dataSet + dataSetPart')
 [acorPart, lagPart] = xcorr(dataSetPart, dataRefPart);
 
 % Figure check
-figure % plot xcorr to lag
-disp('Xcor plot, PART')
-plot (lagPart*dt,acorPart)
+% figure % plot xcorr to lag
+% disp('Xcor plot, PART')
+% plot (lagPart*dt,acorPart)
 
 %t_propagation
 [~,j] = max(acorPart); % find max of correlation, i = position
@@ -132,14 +132,16 @@ soundVelocityPart = length/(1000*(t_propagationPart)) % m/s
 
 figure(gcf)
 disp('GI input')
-plot(dataTime*1E6,dataSet{1}*10^4)
 hold on
-plot(dataTime*1E6,dataRef*10^3)
-xlim([0,100])
+plot(dataTime*1E6,dataSet{1}*10^4) %dataSet
+plot(dataTime*1E6,dataRef*10^3) %dataRef
+plot(dataTime(:,round(Tmin):round(Tmax))*1E6,dataSetPart*10^4,'.g') %dataPart
+% xlim([0,100]) %100/160 by X <---
 xlabel('Time, \mus')
 ylabel('Amplitude, mV')
-legend('dataSet','dataRef')
-title('dataSet + dataRef')
+legend('dataSet x10 Scale!','dataRef', 'dataSetPart for xcorr')
+title('dataSet with selected Part + dataRef')
+
 
 [x,y] = ginput(2)
 t_propagationGI = abs(x(2) - x(1))
