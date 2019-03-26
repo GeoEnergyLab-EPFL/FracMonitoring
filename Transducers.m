@@ -1,14 +1,12 @@
 classdef Transducers
-    % Transudcers class goes here
-    %
     
     properties
         serial(:,1) int32   % vector containing transducer serial numbers
-        type(:,1) char      % vector containing either 'P' or 'S'
-        channel(:,1) string % vector string, how the transducers are used (for example "S24")
+        type(:,1) char      % vector containing either 'S' or 'R'
+        channel(:,1) int32  % vector containing the transducer channel
         platten(:,1) char   % vector containing the platten ID on which the transducer is
         local_id(:,1) int32 % vector containing the hole ID of the transducer
-        orientation(:,1)    % vector containing the orientation of the transducer 
+        orientation(:,1) double   % vector containing the orientation of the transducer
         % cable for Shear transducer, angle in radians with respect to the 
         % platten local coordinate system
     end
@@ -23,10 +21,10 @@ classdef Transducers
     methods
         
         % constructor
-        function obj = Transducers(serial,type,channel,platten,loc_id)
+        function obj = Transducers(serial,type,channel,platten,loc_id,orient)
             % put checks on all vectors length !!!
             if ~isequal(length(serial),length(type),length(channel),...
-                    length(platten),length(loc_id))
+                    length(platten),length(loc_id),length(orient))
                 fprintf('\nError: properties should all have the same length!\n');
                 return
             else
@@ -35,6 +33,7 @@ classdef Transducers
                 obj.channel = channel;
                 obj.platten = platten;
                 obj.local_id = loc_id;
+                obj.orientation = orient;
             end
             
         end

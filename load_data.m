@@ -1,4 +1,4 @@
-function  [dataout, varargout] = data_loading(filename,sequences,sources,receivers,varargin)
+function  [dataout, varargout] = load_data(filename,sequences,sources,receivers,varargin)
 % function to load a set of sequences, sources, receivers data
 
 % in varargin min-max time to reduce the number of data pts per traces (NOT
@@ -16,7 +16,7 @@ if ~isfile(fjson)
     return
 end
 % get active acoustic info from header
-[~,~,jsonhdr] = load_header(fjson);
+jsonhdr = load_header(fjson);
 np = jsonhdr.ActiveAcousticInfos.NumberOfPoints;
 ns = jsonhdr.ActiveAcousticInfos.NumberOfSources;
 nr = jsonhdr.ActiveAcousticInfos.NumberOfReceivers;
