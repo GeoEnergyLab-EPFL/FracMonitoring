@@ -9,33 +9,67 @@ classdef Transducers
         orientation(:,1) double   % vector containing the orientation of the transducer
         % cable for Shear transducer, angle in radians with respect to the 
         % platten local coordinate system
+        wave_mode ; % vector containing the type of transducers either Longitudinal (0) or Shear (1)
+        
     end
     
     properties (Dependent)
-        n_transducers
-        n_sources
-        n_receivers
+        n_transducers;
+        n_sources;
+        n_receivers;
+        
     end
-    
     
     methods
         
         % constructor
         function obj = Transducers(serial,type,channel,platten,loc_id,orient)
             % put checks on all vectors length !!!
-            if ~isequal(length(serial),length(type),length(channel),...
-                    length(platten),length(loc_id),length(orient))
+            if ~isequal(length(serial),length(type),length(channel),length(platten),length(loc_id),length(orient))
                 fprintf('\nError: properties should all have the same length!\n');
                 return
             else
-                obj.serial = serial;
-                obj.type = type;
-                obj.channel = channel;
-                obj.platten = platten;
-                obj.local_id = loc_id;
-                obj.orientation = orient;
-            end
             
+            %%% REORDERING IN SEQUENCE Source  0-31 / Receiver 0-31 
+            % instead of by Platten 
+            
+            [~,iaux]=sort(type); % order by alphabetical so first R then S
+            typechar = char(type);
+            nr = sum(ismember(typechar(:,1),'R'));
+            ns = length(type)-nr;
+            iaux_s=iaux([nr+1:nr+ns]); 
+            iaux_r=iaux([1:nr]);
+            
+            [~,is]=sort(channel(iaux_s));
+            [~,ir]=sort(channel(iaux_r));
+            
+            re_order= [iaux_s(is);iaux_r(ir)];
+            % TO be uncommented below when the header is fixed
+%             % check on unicity of channel for the sources
+%             if (length(unique(channel(iaux_s)))~=ns)
+%                 disp('error some duplicate channel in sources ');
+%                 return
+%             end
+%             % check on unicity of channel for the receivers
+%             if (length(unique(channel(iaux_r)))~=nr)
+%                 disp('error some duplicate channel in receivers ');
+%                 return
+%             end
+            
+            obj.channel = channel(re_order);
+            obj.serial = serial(re_order);
+            obj.type = type(re_order);
+            obj.platten = platten(re_order);
+            obj.orientation = orient(re_order);
+            obj.local_id = loc_id(re_order);
+            
+            obj.wave_mode =(obj.orientation~=0);       
+            % to be checked with  the serial numbers ?                 
+            % a priori it seems to be ok - prototype P is 1608142 and
+            % proto shear is 1608143 after all shear transducers are above 1609XXXX
+                
+            end
+             
         end
         
         % methods for dependant properties
@@ -46,14 +80,14 @@ classdef Transducers
         
         % number of sources
         function val = get.n_sources(obj)
-            channelchar = char(obj.channel);
-            val = sum(ismember(channelchar(:,1),'S'));
+            typechar = char(obj.type);
+            val = sum(ismember(typechar(:,1),'S'));
         end
         
         % number of receivers
         function val = get.n_receivers(obj)
-            channelchar = char(obj.channel);
-            val = sum(ismember(channelchar(:,1),'R'));
+            typechar = char(obj.type);
+            val = sum(ismember(typechar(:,1),'R')); 
         end
         
         % METHODS
@@ -71,9 +105,10 @@ classdef Transducers
                 % find corresponding platten
                 p = 1;
                 while p <= length(platten_list)
-                    if strcmp(obj.platten(ii),platten_list{p}.id)
+                   
+                    if strcmp(obj.platten(ii),platten_list(p).id)
                         % get xy in local platten coordinates system
-                        xyloc = platten_list{p}.xy_holes(obj.local_id(ii)+1,:); % vector of length 2
+                        xyloc = platten_list(p).xy_holes(obj.local_id(ii)+1,:); % vector of length 2
                         
                         % ONLY AFTER OFFSET ADDED IN PLATTEN CLASS
                         %                         % add platten offset
@@ -86,7 +121,7 @@ classdef Transducers
                         z_l = 0.;
                        
                         % in global coordinates
-                        xyzTransd(ii,:)= ((platten_list{p}.R)*[x_l;y_l;z_l])' + platten_list{p}.offset ;
+                        xyzTransd(ii,:)= ((platten_list(p).R)*[x_l;y_l;z_l])' + platten_list(p).offset ;
                         break
                     end
                     p=p+1;

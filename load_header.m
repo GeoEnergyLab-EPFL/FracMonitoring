@@ -1,5 +1,5 @@
 function [json_header,myTransd,myPlattens,myBlock] = load_header(filename)
-% TODO: write code
+%  
 % purpose - load json header and create block objects, plattens &
 % transducers objects
 
@@ -17,8 +17,11 @@ myBlock = SampleBlock([length_E, length_N, length_T]);
 n_platten = length(json_header.ActiveAcousticInfos.ArrayPlattenPosition);
 myPlattens = Platten.empty(n_platten,0);
 for i_platten = 1:n_platten
-    tmpID = json_header.ActiveAcousticInfos.ArrayPlattenPosition.Platten;
-    tmpFace = json_header.ActiveAcousticInfos.ArrayPlattenPosition.Position;
+    % corrected bug - missing indices -> as a result  the first platten was
+    % duplicated 6 times;(
+    % 
+    tmpID = json_header.ActiveAcousticInfos.ArrayPlattenPosition(i_platten).Platten;
+    tmpFace = json_header.ActiveAcousticInfos.ArrayPlattenPosition(i_platten).Position;
     tmpPlatten = Platten(tmpID,tmpFace,myBlock);
     myPlattens(i_platten) = tmpPlatten;
 end
