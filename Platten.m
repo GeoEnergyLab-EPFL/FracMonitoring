@@ -1,4 +1,5 @@
 classdef Platten
+    % description:
     % A class for the definition of platten and their position during an experiment
     % This class defines the platten object, that includes info on the
     % physical platten and hole positions as well as how the platten is

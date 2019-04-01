@@ -1,12 +1,18 @@
 classdef SourceReceiverPairs
+    % description: 
+    % class encapsulating data associated with source - receiver pairs 
+    %
+    % Brice Lecampion - 2019
+    %
+    %
     
     properties
         
-        SRmap;  % matrix of integer containing the mapping   n_pair by 2
+        SRmap;  % matrix of integer containing the mapping   Source Receiver  size( n_pair by 2)
         
-        XS_XR ;  % matrix of reel containing coord of source , cord of receivers - n_pair rows by 6 colum
+        XS_XR ;  % matrix of real containing coord of source , cord of receivers - n_pair rows by 6 colum
         
-        wave_type; % vector of length n_pair with type of wave - string ?
+        wave_type;% vector of length n_pair with type of wave - string ?
         
     end
     
@@ -69,6 +75,7 @@ classdef SourceReceiverPairs
             
         end
         
+        
         % method to get distances between all R-S pairs
         function distances=get.distances(obj)
             
@@ -77,6 +84,7 @@ classdef SourceReceiverPairs
             
         end
         
+        % number of source - receiver pairs in the object
         function n_pairs = get.n_pairs(obj)
              
             [n_pairs ~ ] =size(obj.SRmap);
@@ -84,7 +92,7 @@ classdef SourceReceiverPairs
             
         end
         
-        
+        % get distance for a given pair in the map
         function d=getDistancePairI(obj,i)
             
             df=obj.XS_XR(i,1:3)-obj.XS_XR(i,4:6);
@@ -92,6 +100,7 @@ classdef SourceReceiverPairs
             
         end
         
+        % function to get distance for a range of pairs in the map
         function d=getDistancePairRange(obj,r)
             
             df=obj.XS_XR(r,1:3)-obj.XS_XR(r,4:6);
@@ -100,6 +109,7 @@ classdef SourceReceiverPairs
         end
         
         
+        % function to plot the rays of all pairs in the map
         function fig_handle=plotdirectrays(obj,varargin)
           
            % narg = length(varargin);

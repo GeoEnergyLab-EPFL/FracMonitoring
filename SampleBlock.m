@@ -1,7 +1,8 @@
 classdef SampleBlock
-    % class for the description of one block, with position of different
+    % description
+    % class encapsulating data of one block smaple, with position of different
     % plattens
-    
+    %
     % the origin of the block coordinates is at the West-South-Bottom corner (WSB)
     
     properties

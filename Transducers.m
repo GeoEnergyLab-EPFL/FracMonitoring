@@ -1,5 +1,17 @@
 classdef Transducers
-    
+    % description
+    %
+    % This class encapsulates all data of an array of transducers:
+    % - serial #
+    % - transducer type: Source or Receiver
+    % - channel id (integer) -> giving corresponding index of the data
+    % matrix of a sequence 
+    % - platten id : platten where the transducer is located
+    % - local_id : hole  # where the transducer is located on the platten
+    % - orientation: orientation of calble (for shear wave transducer)
+    % - wave_mode: type of transducer either longitudinal or shear 
+    %
+    %
     properties
         serial(:,1) int32   % vector containing transducer serial numbers
         type(:,1) char      % vector containing either 'S' or 'R'
@@ -14,6 +26,7 @@ classdef Transducers
     end
     
     properties (Dependent)
+        
         n_transducers;
         n_sources;
         n_receivers;
@@ -169,9 +182,6 @@ classdef Transducers
             plot3(xyzTransd(:,1),xyzTransd(:,2),xyzTransd(:,3),plotstyle);
             %axis equal;
         end
-        
-                
-        
         
         % distances for all source-receiver pairs
         function dists = transducerdists(obj,platten_list)
