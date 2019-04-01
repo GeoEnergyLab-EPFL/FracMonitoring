@@ -168,7 +168,7 @@ classdef Platten
             axis equal tight
         end
         
-        % plot platten geometry in 3D
+        % plot platten geometry in 3D 
         function fig_handle = plattenplot3D(obj,block_data,varargin)
             % compute 3D locations
             xyz_loc = (obj.R*[obj.xy_holes(:,1), obj.xy_holes(:,2),...
@@ -191,7 +191,8 @@ classdef Platten
             holetxt = cellstr(num2str((0:(obj.n_holes-1))'));
             %txtoffset = 2;
             text(xyz_loc(:,1),xyz_loc(:,2),xyz_loc(:,3),holetxt)
-            % add block edges
+            % add block edges ---- this will be dublicated plenty of times
+            % ;(
             plot_cuboid(block_data.sizes,[0 0 0],fig_handle)
             axis equal tight
             % add platten letter ID in top-left corner of outer platten

@@ -143,8 +143,10 @@ classdef Transducers
             % open figure from passed handle if it exists
             % optional argument 1 is figure handle
             % optional argument 2 is plotting style
+            
+            narg = length(varargin);
+
             if ~isempty(varargin)
-                narg = length(varargin);
                 if isgraphics(varargin{1})
                     fig_handle = figure(varargin{1});
                 else
@@ -154,15 +156,22 @@ classdef Transducers
                 fig_handle = figure;
             end
             hold on
+  
             xyzTransd = calc_global_coord(obj,platten_list);
+            
             plotstyle = 'b.';
             if narg>=2
                 if ischar(varargin{2})
                     plotstyle = varargin{2};
                 end
+                
             end
-            plot3(xyzTransd(:,1),xyzTransd(:,2),xyzTransd(:,3),plotstyle)
+            plot3(xyzTransd(:,1),xyzTransd(:,2),xyzTransd(:,3),plotstyle);
+            %axis equal;
         end
+        
+                
+        
         
         % distances for all source-receiver pairs
         function dists = transducerdists(obj,platten_list)

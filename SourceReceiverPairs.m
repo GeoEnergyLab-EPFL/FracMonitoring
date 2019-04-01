@@ -13,6 +13,7 @@ classdef SourceReceiverPairs
     properties (Dependent)
         
         distances;
+        n_pairs;
         
     end
     
@@ -76,6 +77,14 @@ classdef SourceReceiverPairs
             
         end
         
+        function n_pairs = get.n_pairs(obj)
+             
+            [n_pairs ~ ] =size(obj.SRmap);
+            
+            
+        end
+        
+        
         function d=getDistancePairI(obj,i)
             
             df=obj.XS_XR(i,1:3)-obj.XS_XR(i,4:6);
@@ -90,6 +99,40 @@ classdef SourceReceiverPairs
             
         end
         
+        
+        function fig_handle=plotdirectrays(obj,varargin)
+          
+           % narg = length(varargin);
+            if ~isempty(varargin)
+                if isgraphics(varargin{1})
+                    fig_handle = figure(varargin{1});
+                else
+                    fig_handle = figure;
+                end
+            else
+                fig_handle = figure;
+            end
+            hold on
+           
+            
+            % Here do a arrow ?
+            % WTF seems obvious but hard to do in matlab
+            
+            % by default Source  POSITION in RED - Receiver in Blue 
+            % and the ray in black
+ 
+            for i=1:obj.n_pairs
+                plot3(obj.XS_XR(i,[1 4])',obj.XS_XR(i,[2 5])',obj.XS_XR(i,[3 6])','k.-.','linewidth',2)
+                hold on;
+            end
+            plot3(obj.XS_XR(:,1),obj.XS_XR(:,2),obj.XS_XR(:,3),'r.','MarkerSize',18);
+            hold on
+            plot3(obj.XS_XR(:,4),obj.XS_XR(:,5),obj.XS_XR(:,6),'b.','MarkerSize',18);
+            
+%             
+            axis equal
+        
+        end
         
     end
     
