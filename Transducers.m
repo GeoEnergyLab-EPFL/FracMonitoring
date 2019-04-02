@@ -202,11 +202,12 @@ classdef Transducers
             hold on
             
             xyzTransd = calc_global_coord(obj,platten_list);
-            
-            plotstyle = 'b.';
+            plotstyleS = 'r.';
+            plotstyleR = 'b.'
             if narg>=2
                 if ischar(varargin{2})
-                    plotstyle = varargin{2};
+                    plotstyleS = varargin{2};
+                    plotstyleR = varargin{2};
                 end
                 
             end

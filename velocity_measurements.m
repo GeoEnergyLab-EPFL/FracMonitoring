@@ -1,6 +1,10 @@
 
 %% Function to measure sound velocity by reading two signals source-receiver at the begining
 
+<<<<<<< Updated upstream
+=======
+function [soundVelocity] = velocity_measurements(dataset,dataRef,dt)
+>>>>>>> Stashed changes
 
 function [soundVelocity, soundVelocityPart, soundVelocityGI] = ...
     velocity_measurements(dataRefPath,dataSetPath,sequences,sources,receivers, Tmin, Tmax)
@@ -28,6 +32,7 @@ function [soundVelocity, soundVelocityPart, soundVelocityGI] = ...
 
 %% Length between source and receiver
    
+<<<<<<< Updated upstream
 length = 250; % normally from SampleBlock -- TBD
 
     
@@ -58,6 +63,9 @@ dataRef = load_data(dataRefFilePath,1,1,1);
 % figure % plot dataRef
 % disp('reference signal read, source')
 % plot(dataTime*1E6,dataRef,dataTime*1E6,abs(hilbert(dataRef)))
+=======
+length = 250*1E-3; % normally from SampleBlock -- TBD
+>>>>>>> Stashed changes
 
 
 % figure % plot dataSet
@@ -65,9 +73,13 @@ dataRef = load_data(dataRefFilePath,1,1,1);
 % plot(dataTime*1E6,dataSet{1})
 
 
+<<<<<<< Updated upstream
 %% Find t_propagation and Velocity with xcorr dataSet and dataRef
+=======
+%% Find t_propagation with xcorr dataSet and dataRef
+>>>>>>> Stashed changes
 
-[acor, lag] = xcorr(dataSet{1}, dataRef);
+[acor, lag] = xcorr(dataset(:,1),dataRef);
 
 % % Figure check
 % figure % plot xcorr to lag
@@ -75,6 +87,7 @@ dataRef = load_data(dataRefFilePath,1,1,1);
 % plot (lag*dt,acor)
 
 %t_propagation
+<<<<<<< Updated upstream
 [~,i] = max(acor); % find max of correlation, i = position
 %lagDiff = lag(i); [~,x]=size(lag); x=(x+1)/2; 
 t_propagation = lag(i)*dt; % lagTime = timepropagation
@@ -146,6 +159,17 @@ title('dataSet with selected Part + dataRef')
 [x,y] = ginput(2)
 t_propagationGI = abs(x(2) - x(1))
 soundVelocityGI = length*1000/t_propagationGI % m / timeScale
+=======
+[~,i] = max(abs(acor)); % find max of correlation, i = position
+%lagDiff = lag(i);
+%[~,x]=size(lag);
+%x=(x+1)/2; 
+t_propagation = lag(i)*dt; % lagTime = timepropagation
+
+%% Velocity mesasurement
+
+soundVelocity = length/(t_propagation); % m/s
+>>>>>>> Stashed changes
 
 end
     

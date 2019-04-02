@@ -20,14 +20,36 @@ end
 
 % 2019 acquisitions
 datayear = 19;
+
 % % injection on slate
-datamonth = 03;
-dataday = 01;
-starttime = '121330';
+% datamonth = 03;
+% dataday = 01;
+% starttime = '121330';
+
 % test on gabbro
-%datamonth = 03;
-%dataday = 22;
-%starttime = '145034';
+% datamonth = 03;
+% dataday = 14;
+% starttime = '093621';
+
+% test transducers
+% NS platten
+% datamonth = 03;
+% dataday = 27;
+% starttime = '114711';.
+% EW platten
+% datamonth = 03;
+% dataday = 27;
+% starttime = '175106';
+% all platten
+datamonth = 03;
+dataday = 28;
+starttime = '112737';
+
+% test aluminium
+% datamonth = 01;
+% dataday = 29;
+% starttime = '133723';
+
 
 % data folder name from experiment date
 datafold = [num2str(datayear,'%02d') '-' num2str(datamonth,'%02d') '-' ...
@@ -36,7 +58,6 @@ datafold = [num2str(datayear,'%02d') '-' num2str(datamonth,'%02d') '-' ...
 % extract header info from JSON file
 fjson = [datapath datafold num2str(starttime) '.json'];
 [jsonhdr,myTransducers,myPlattens,myBlock] = load_header(fjson);
-
 
 %% load data from bin file
 % read active acoustic parameters from JSON header
@@ -53,6 +74,17 @@ Fn = 0.5*Fs;    % Nyquist frequency (Hz)
 
 fbin = [datapath datafold num2str(starttime) '.bin'];
 [dataseq1, nq] = load_data(fbin,1:1,1:32,1:32);
+
+%% low rate data
+[lowrate_data, lowrateTime] = load_lowrate(fbin);
+
+% plot injection flows
+figure
+plot(lowrateTime,lowrate_data(:,11),lowrateTime,lowrate_data(:,14))
+axis tight
+xlim([lowrateTime(1) lowrateTime(end)])
+ylim([0 1])
+
 
 %% plot all
 figure
