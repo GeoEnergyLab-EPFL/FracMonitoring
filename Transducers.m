@@ -287,8 +287,7 @@ classdef Transducers
             % find source on platten
             ks_1= find(((TransducerObj.platten==platten_list(p_first).id) .* (TransducerObj.type=='S'))==1);
             % kr_1= find(((TransducerObj.platten==platten_list(p_first).id) .* (TransducerObj.type=='R'))==1)-TransducerObj.n_sources;
-            %  disp(ks_1');
-            %  disp(kr_1');
+             
             % find receiver on opposite platten
             %  ks_2= find(((TransducerObj.platten==platten_list(p_two).id) .* (TransducerObj.type=='S'))==1);
             kr_2= find(((TransducerObj.platten==platten_list(p_two).id) .* (TransducerObj.type=='R'))==1) -TransducerObj.n_sources;
@@ -313,7 +312,6 @@ classdef Transducers
             objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap);
             
         end
-        
         
         
         % constructor of  S-R pairs for opposite platten pairs
@@ -373,13 +371,6 @@ classdef Transducers
             objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap);
             
         end
-        
-        
-        % constructor of  S-R pairs for 4 neighbour platten pairs (for
-        % diffraction)
-        
-        
-        
         
     end
     
