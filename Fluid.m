@@ -1,4 +1,6 @@
 classdef Fluid
+    % description:
+    %
     % a class for fluids used in HF experiments, containing the physical
     % properties of the fluid relevant for the injection
     
@@ -21,7 +23,7 @@ classdef Fluid
                 obj.compressibility = 0;
                 obj.viscosity = 0; % in Pa.s
             elseif strcmp(fluidtype,'siliconeA')
-                obj.rho = 1050;% 
+                obj.rho = 1050;%
                 obj.Vp = 1350;  %
                 obj.compressibility = 0;
                 obj.viscosity = 0; % in Pa.s.
