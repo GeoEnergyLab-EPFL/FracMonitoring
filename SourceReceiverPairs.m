@@ -1,10 +1,10 @@
 classdef SourceReceiverPairs
-    % description: 
-    % class encapsulating data associated with source - receiver pairs 
-    %
+    % description:
+    % class encapsulating data associated with source - receiver pairs
+    % 
     % Brice Lecampion - 2019
-    %
-    %
+    % 
+    % 
     
     properties
         
@@ -25,7 +25,9 @@ classdef SourceReceiverPairs
     
     methods
         
-        % constructor
+        
+        % constructor from TransducerObj platten list and a map
+        
         function obj=SourceReceiverPairs(TransducerObj,platten_list,my_map,varargin)
             %note we put wave_type in varargin - as sometimes one may not
             %need it - in that case we just put dummy values
@@ -38,14 +40,14 @@ classdef SourceReceiverPairs
             end
             
             % check on sources in the map
-            C = intersect(TransducerObj.channel(1:TransducerObj.n_sources),unique(my_map(:,1)));
+            C = intersect(TransducerObj.channel(1:TransducerObj.n_sources)+1,unique(my_map(:,1)));
             if ( length(C)<length(unique(my_map(:,1))) )
                 disp('error - some source in the map are not registered in the transducers array' );
                 return
             end
             % check on receivers in the map
             
-            C = intersect(TransducerObj.channel(1:TransducerObj.n_sources),unique(my_map(:,2)));
+            C = intersect(TransducerObj.channel(1:TransducerObj.n_sources)+1,unique(my_map(:,2)));
             if ( length(C)<length(unique(my_map(:,2))) )
                 disp('error - some receivers in the map are not registered in the transducers array' );
                 return
@@ -70,6 +72,10 @@ classdef SourceReceiverPairs
                     disp('error in wave type numbered entered - not consistent with number of S-R pairs in the map entered');
                     return;
                 end
+            else
+                aux=zeros(length(my_map(:,1)),1);
+                aux(:)='P';
+                obj.wave_type=char(aux);
                 
             end
             
@@ -86,9 +92,8 @@ classdef SourceReceiverPairs
         
         % number of source - receiver pairs in the object
         function n_pairs = get.n_pairs(obj)
-             
-            [n_pairs ~ ] =size(obj.SRmap);
             
+            [n_pairs ~ ] =size(obj.SRmap);
             
         end
         
@@ -109,10 +114,26 @@ classdef SourceReceiverPairs
         end
         
         
+        function the_comb_map=CombineMaps(obj1,obj2)
+            % add two SourceReceiverPairs objects   -> impossible to do
+            % with shitty matlab oo
+            
+            [the_comb_map ,~ ,~]=union(obj1.SRmap,obj2.SRmap,'rows');
+%             obj=SourceReceiverPairs();
+%             
+%             obj.SRmap=the_comb_map;
+%             
+%             obj.XS_XR=[obj1.XS_XR(i1,:) ; obj2.XS_XR(i2,:) ];
+%             obj.wave_type = [obj1.wave_type(i1,:) ; obj2.wave_type(i2,:) ];
+            % keep the non-duplicate
+            
+        end
+        
+        
         % function to plot the rays of all pairs in the map
         function fig_handle=plotdirectrays(obj,varargin)
-          
-           % narg = length(varargin);
+            
+            % narg = length(varargin);
             if ~isempty(varargin)
                 if isgraphics(varargin{1})
                     fig_handle = figure(varargin{1});
@@ -123,14 +144,14 @@ classdef SourceReceiverPairs
                 fig_handle = figure;
             end
             hold on
-           
+            
             
             % Here do a arrow ?
             % WTF seems obvious but hard to do in matlab
             
-            % by default Source  POSITION in RED - Receiver in Blue 
+            % by default Source  POSITION in RED - Receiver in Blue
             % and the ray in black
- 
+            
             for i=1:obj.n_pairs
                 plot3(obj.XS_XR(i,[1 4])',obj.XS_XR(i,[2 5])',obj.XS_XR(i,[3 6])','k.-.','linewidth',2)
                 hold on;
@@ -139,9 +160,9 @@ classdef SourceReceiverPairs
             hold on
             plot3(obj.XS_XR(:,4),obj.XS_XR(:,5),obj.XS_XR(:,6),'b.','MarkerSize',18);
             
-%             
+            %
             axis equal
-        
+            
         end
         
     end
