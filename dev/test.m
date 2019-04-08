@@ -17,11 +17,12 @@ plattenplot3D(PlattenC,myBlock,fig3D);
 % parameters for tranducer object
 transd_serial = [1 2 3 4 5 6 7 8 10 11];
 transd_type = {'P' 'P' 'P' 'P' 'S' 'P' 'S' 'S' 'P' 'P'};
-transd_channel = {'S1' 'R2' 'S3' 'R4' 'S5' 'R6' 'S7' 'R8' 'R20' 'S21'};
+transd_channel = {'S1' 'S2' 'R3' 'S4' 'S5' 'R6' 'R7' 'R8' 'S9' 'S10'};
 transd_locid = [8 9 10 11 12 13 14 15 3 6];
 transd_platten = {'A' 'A' 'A' 'A' 'A' 'A' 'A' 'A' 'C' 'C'};
+transd_orient = [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.];
 % create transducer object
-myTransd = Transducers(transd_serial,transd_type,transd_channel,transd_platten,transd_locid);
+myTransd = Transducers(transd_serial,transd_type,transd_channel,transd_platten,transd_locid,transd_orient);
 
 % get transducer coordinates
 xyz = myTransd.calc_global_coord({PlattenA,PlattenC});

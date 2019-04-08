@@ -1,6 +1,6 @@
 function [Up, Usv, Ush, Psi] = GroupVel(c11,c33,c13,c55,c66,rho,theta)
 %GROUPVEL computes the group velocities of a TI medium for discrete angles
-%   GROUPVEL returns the group velocities and group andle of a TI medium as
+%   GROUPVEL returns the group velocities and group angle of a TI medium as
 %   a function of the elastic constants C11, C33, C13, C55, C66, the
 %   density RHO, for a vector of phase angles theta
 %

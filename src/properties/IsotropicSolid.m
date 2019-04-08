@@ -52,7 +52,7 @@ classdef IsotropicSolid < Solid
         % get longitudinal wave velocity
         function Vp=get.Vp(obj)
             
-            Vp=sqrt((obj.K+2./3.*obj.G)/obj.density);
+            Vp=sqrt((obj.K+4./3.*obj.G)/obj.density);
             
         end
         
