@@ -38,10 +38,10 @@ classdef Platten
                     % it's a cross
                     obj.type='cross';
                     
-                    % positions of holes on platen A and B in mm
-                    dcross = 18;    % top platen cross spacing
-                    ddiag1 = 34;    % top platen first diag spacing
-                    ddiag2 = 28;    % top platen additional diag spacing
+                    % positions of holes on platen A and B in m
+                    dcross = 18*1E-3;    % top platen cross spacing
+                    ddiag1 = 34*1E-3;    % top platen first diag spacing
+                    ddiag2 = 28*1E-3;    % top platen additional diag spacing
                     % compute positions in patten frame of reference,
                     % origin is center of platten
                     x_tmp = [zeros(1,10), [5 4 3 2 1]*dcross,...
@@ -61,10 +61,10 @@ classdef Platten
                     % it's a grid
                     obj.type='grid';
                     
-                    % positions of holes on platen C, D, E and F in mm
-                    dhoriz = 50;    % side platen horiz spacing
-                    dvert1 = 20;    % side platen first vert spacing
-                    dvert2 = 30;    % side platen farther vert spacing
+                    % positions of holes on platen C, D, E and F in m
+                    dhoriz = 50*1E-3;    % side platen horiz spacing
+                    dvert1 = 20*1E-3;    % side platen first vert spacing
+                    dvert2 = 30*1E-3;    % side platen farther vert spacing
                     % compute positions
                     x_tmp = repmat([-dhoriz 0 dhoriz],1,4)';
                     y_tmp = [ones(1,3)*(dvert1+dvert2), ones(1,3)*dvert1,...
@@ -162,11 +162,16 @@ classdef Platten
             text(obj.xy_holes(:,1)+txtoffset,obj.xy_holes(:,2),holetxt)
             
             % add edges of platten
-            plot([-125 -125],[-125 125],'k')
-            plot([-125 125],[125 125],'k')
-            plot([125 125],[-125 125],'k')
-            plot([-125 125],[-125 -125],'k')
+            plot([-0.125 -0.125],[-0.125 0.125],'k')
+            plot([-0.125 0.125],[0.125 0.125],'k')
+            plot([0.125 0.125],[-0.125 0.125],'k')
+            plot([-0.125 0.125],[-0.125 -0.125],'k')
             axis equal tight
+            
+            % axes labeling
+            xlabel('Easting (m)')
+            ylabel('Northing (m)')
+            zlabel('Height (m)')
         end
         
         % plot platten geometry in 3D 
@@ -198,7 +203,7 @@ classdef Platten
             axis equal tight
             % add platten letter ID in top-left corner of outer platten
             % face (as is physically stamped)
-            letterIDpos = (obj.R*[-100 100 0]')'+obj.offset;
+            letterIDpos = (obj.R*[-0.1 0.1 0]')'+obj.offset;
             text(letterIDpos(1),letterIDpos(2),letterIDpos(3),obj.id)
         end
         

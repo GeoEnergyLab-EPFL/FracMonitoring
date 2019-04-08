@@ -6,10 +6,10 @@ function [json_header,myTransd,myPlattens,myBlock] = load_header(filename)
 % general header info
 json_header = jsondecode(fileread(filename));
 
-% block info
-length_E = json_header.TestInfos.BlockDimensions_mm_.E_W_mm_;
-length_N = json_header.TestInfos.BlockDimensions_mm_.N_S_mm_;
-length_T = json_header.TestInfos.BlockDimensions_mm_.T_B_mm_;
+% block info converted to meters
+length_E = json_header.TestInfos.BlockDimensions_mm_.E_W_mm_*1E-3;
+length_N = json_header.TestInfos.BlockDimensions_mm_.N_S_mm_*1E-3;
+length_T = json_header.TestInfos.BlockDimensions_mm_.T_B_mm_*1E-3;
 myBlock = SampleBlock([length_E, length_N, length_T]);
 
 %%%% PLATTEN

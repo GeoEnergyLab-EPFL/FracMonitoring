@@ -1,5 +1,5 @@
 %% cleanup first, set global parameters
-close all
+%close all
 clearvars
 home
 
@@ -27,23 +27,23 @@ datayear = 19;
 % starttime = '121330';
 
 % test on gabbro
-% datamonth = 03;
-% dataday = 14;
-% starttime = '093621';
+datamonth = 03;
+dataday = 14;
+starttime = '093621';
 
 % test transducers
-% NS platten
+% % NS platten
 % datamonth = 03;
 % dataday = 27;
 % starttime = '114711';.
-% EW platten
+% % EW platten
 % datamonth = 03;
 % dataday = 27;
 % starttime = '175106';
-% all platten
-datamonth = 03;
-dataday = 28;
-starttime = '112737';
+% % all platten
+% datamonth = 04;
+% dataday = 05;
+% starttime = '141723';
 
 % test aluminium
 % datamonth = 01;
@@ -76,14 +76,21 @@ fbin = [datapath datafold num2str(starttime) '.bin'];
 [dataseq1, nq] = load_data(fbin,1:1,1:32,1:32);
 
 %% low rate data
-[lowrate_data, lowrateTime] = load_lowrate(fbin);
+[lowrateData, lowrateTime, lowrateHeader] = load_lowrate(fbin);
 
 % plot injection flows
 figure
-plot(lowrateTime,lowrate_data(:,11),lowrateTime,lowrate_data(:,14))
+plot(lowrateTime,lowrateData(:,11),lowrateTime,lowrateData(:,14))
 axis tight
 xlim([lowrateTime(1) lowrateTime(end)])
 ylim([0 1])
+
+% plot pressure
+figure
+plot((1:length(lowrateTime))/10,lowrateData(:,10)/1E3)%,(1:length(lowrateTime))/10,lowrateData(:,13)/1E3)
+axis tight
+xlabel('Time (s)')
+ylabel('Pressure (MPa)')
 
 
 %% plot all
@@ -125,6 +132,16 @@ ylabel('Time (\mus)')
 title(['All receivers for source # ' num2str(i_source)])
 caxis([-1 1]*0.01)
 
+% plot arrivals for one receiver
+i_seq = 1;
+i_receiver = 24;
+figure
+imagesc(1:nr,T*1E6,squeeze(dataseq1(i_seq,:,:,i_receiver)))
+xlabel('Receiver number')
+ylabel('Time (\mus)')
+title(['All sources for receiver # ' num2str(i_receiver)])
+caxis([-1 1]*0.01)
+
 %% look for good source-receiver pairs
 D = reshape(squeeze(dataseq1(1,:,:,:)),[],ns*nr); % flatten 3D array
 Dd = squeeze(D(:,1:nr+1:end)); % extract 'diagonal'
@@ -149,7 +166,7 @@ Nall = squeeze(vecnorm(squeeze(dataseq1(1,endnoise:end,:,:)),2,1));
 figure
 imagesc(1:nr,1:ns,Nall)
 axis square
-caxis([0 1]*0.25)
+caxis([0 1]*2.5)
 colormap('jet')
 xlabel('Receiver #')
 ylabel('Source #')

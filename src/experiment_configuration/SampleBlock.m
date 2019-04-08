@@ -6,10 +6,10 @@ classdef SampleBlock
     % the origin of the block coordinates is at the West-South-Bottom corner (WSB)
     
     properties
-        L_E double % length in E-W direction in mm
-        L_N double % length in N-S direction in mm
-        L_T double % length in T-B direction in mm
-        sizes = [250, 250, 250]; % vector with the three lengths above
+        L_E double % length in E-W direction in m
+        L_N double % length in N-S direction in m
+        L_T double % length in T-B direction in m
+        sizes = [0.25, 0.25, 0.25]; % vector with the three lengths above
         faces_offset % offsets with respect to WSB origin
     end
     

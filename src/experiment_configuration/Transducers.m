@@ -46,28 +46,28 @@ classdef Transducers
                 %%% REORDERING IN SEQUENCE Source  0-31 / Receiver 0-31
                 % instead of by Platten
                 
-                [~,iaux]=sort(type); % order by alphabetical so first R then S
+                [~, iaux] = sort(type); % order by alphabetical so first R then S
                 typechar = char(type);
                 nr = sum(ismember(typechar(:,1),'R'));
                 ns = length(type)-nr;
-                iaux_s=iaux([nr+1:nr+ns]);
-                iaux_r=iaux([1:nr]);
+                iaux_s = iaux(nr+1:nr+ns);
+                iaux_r = iaux(1:nr);
                 
-                [~,is]=sort(channel(iaux_s));
-                [~,ir]=sort(channel(iaux_r));
+                [~, is] = sort(channel(iaux_s));
+                [~, ir] = sort(channel(iaux_r));
                 
-                re_order= [iaux_s(is);iaux_r(ir)];
-                % TO be uncommented below when the header is fixed
-                %             % check on unicity of channel for the sources
-                %             if (length(unique(channel(iaux_s)))~=ns)
-                %                 disp('error some duplicate channel in sources ');
-                %                 return
-                %             end
-                %             % check on unicity of channel for the receivers
-                %             if (length(unique(channel(iaux_r)))~=nr)
-                %                 disp('error some duplicate channel in receivers ');
-                %                 return
-                %             end
+                re_order = [iaux_s(is); iaux_r(ir)];
+
+                % check on unicity of channel for the sources
+                if (length(unique(channel(iaux_s)))~=ns)
+                    disp('error some duplicate channel in sources ');
+                    return
+                end
+                % check on unicity of channel for the receivers
+                if (length(unique(channel(iaux_r)))~=nr)
+                    disp('error some duplicate channel in receivers ');
+                    return
+                end
                 
                 obj.channel = channel(re_order);
                 obj.serial = serial(re_order);
@@ -93,14 +93,12 @@ classdef Transducers
         
         % number of sources
         function val = get.n_sources(obj)
-            typechar = char(obj.type);
-            val = sum(ismember(typechar(:,1),'S'));
+            val = length(find(obj.type=='S'));
         end
         
         % number of receivers
         function val = get.n_receivers(obj)
-            typechar = char(obj.type);
-            val = sum(ismember(typechar(:,1),'R'));
+            val = length(find(obj.type=='R'));
         end
         
         % METHODS
@@ -151,10 +149,9 @@ classdef Transducers
             
         end
         
-        % methods returning the  transducers channel of transducers
+        % method returning the  transducers channel of transducers
         % located in a given platten either source or receiver
-        
-        function channels_on_platten=Transducers_on_platten(obj,platten_char,s_r_char)
+        function channels_on_platten = Transducers_on_platten(obj,platten_char,s_r_char)
             
             % check that platten_char is either  on obj
             pl_obj=unique(obj.platten);
@@ -200,7 +197,7 @@ classdef Transducers
             
             xyzTransd = calc_global_coord(obj,platten_list);
             plotstyleS = 'r.';
-            plotstyleR = 'b.'
+            plotstyleR = 'b.';
             if narg>=2
                 if ischar(varargin{2})
                     plotstyleS = varargin{2};
@@ -208,8 +205,11 @@ classdef Transducers
                 end
                 
             end
-            plot3(xyzTransd(:,1),xyzTransd(:,2),xyzTransd(:,3),plotstyle);
-            %axis equal;
+            
+            plot3(xyzTransd(1:obj.n_sources,1),xyzTransd(1:obj.n_sources,2),...
+                xyzTransd(1:obj.n_sources,3),plotstyleS);
+            plot3(xyzTransd(obj.n_sources+1:end,1),xyzTransd(obj.n_sources+1:end,2),...
+                xyzTransd(obj.n_sources+1:end,3),plotstyleR);
         end
         
         % distances for all source-receiver pairs
@@ -231,8 +231,6 @@ classdef Transducers
             directions = dirtmp./vecnorm(A,2,3); % normalized
         end
         
-        
-        %%% METHODS to construct SourceReceiverPairs object
         
         % Construct  S-R pairs object without the intra-platten pairs
         function objpair=AllexceptintraPairs(TransducerObj,platten_list)
@@ -259,11 +257,12 @@ classdef Transducers
             
             myMap=myMap(1:k-1,:);
             
-            objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap);  
+            objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap);
+            
         end
         
-        
-        function objpair=TwoPlattenPairs(TransducerObj,platten_list,p_1,p_2)        
+        function objpair=TwoPlattenPairs(TransducerObj,platten_list,p_1,p_2)
+            
             % create SRPairs object for opposite platten taking the source
             % of platten p_1 and the receivers on platten p_2
             
@@ -274,7 +273,6 @@ classdef Transducers
             for p=1:n_p
                 pl_f(p)= platten_list(p).face;
             end
-            %pl_f=char(pl_f);
             
             if isempty(intersect(pl_f,p_1)) || isempty(intersect(pl_f,p_2))
                 disp(' error in given platten face or corresponding platten list input!');
@@ -315,22 +313,21 @@ classdef Transducers
         
         
         % constructor of  S-R pairs for opposite platten pairs
-        function objpair=AllOppositePairs(TransducerObj,platten_list)
+        function objpair = AllOppositePairs(TransducerObj,platten_list)
             % - do not choose the S-R which are on the same platten  only the S-R pairs
             % All S-R pairs beside the one on the same platten than the source
             n_s = length(find(TransducerObj.type=='S'));
             n_r = length(find(TransducerObj.type=='R'));
-            myMap=zeros((n_s*n_r),2);
+            myMap = zeros((n_s*n_r),2);
             
-            n_p=length(platten_list);
-            pl_f=[];
-            for p=1:n_p
-                pl_f=[pl_f ; platten_list(p).face];
+            n_p = length(platten_list);
+            pl_f = char(zeros(n_p,1));
+            for p = 1:n_p
+                pl_f(p) = platten_list(p).face;
             end
             
-            k=1;
-            
-            for p=1:n_p
+            k = 1;
+            for p = 1:n_p
                 
                 % find opposite platten
                 
