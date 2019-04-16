@@ -57,7 +57,7 @@ classdef Transducers
                 [~, ir] = sort(channel(iaux_r));
                 
                 re_order = [iaux_s(is); iaux_r(ir)];
-
+                
                 % check on unicity of channel for the sources
                 if (length(unique(channel(iaux_s)))~=ns)
                     disp('error some duplicate channel in sources ');
@@ -151,6 +151,8 @@ classdef Transducers
         
         % method returning the  transducers channel of transducers
         % located in a given platten either source or receiver
+        % this function is sort of depreciated now with the SourceReceiver
+        % Pairs object
         function channels_on_platten = Transducers_on_platten(obj,platten_char,s_r_char)
             
             % check that platten_char is either  on obj
@@ -222,6 +224,7 @@ classdef Transducers
         end
         
         % directions of rays for all source-receiver pairs
+        % this function should be a method of source -receiver pair object
         function directions = transducerdirections(obj,platten_list)
             xyzTransd = calc_global_coord(obj,platten_list);
             dx = xyzTransd(:,1)-xyzTransd(:,1)'; % diff in x direction
@@ -239,6 +242,7 @@ classdef Transducers
             n_s = length(find(TransducerObj.type=='S'));
             n_r = length(find(TransducerObj.type=='R'));
             myMap=zeros((n_s*n_r),2);
+            wave_type_mat=zeros((n_s*n_r),2);
             ch=linspace(1,n_r,n_r)';
             k=1;
             for i=1:n_s
@@ -250,14 +254,32 @@ classdef Transducers
                 
                 myMap(k:k+length(other_r)-1,1)=i;
                 myMap(k:k+length(other_r)-1,2)=other_r;
+                wave_type_mat(k:k+length(other_r)-1,1)= TransducerObj.wave_mode(i);
+                wave_type_mat(k:k+length(other_r)-1,2)=TransducerObj.wave_mode(other_r);
                 
                 k=k+length(other_r);
+                
             end
             
             
             myMap=myMap(1:k-1,:);
+             wave_type=[];
             
-            objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap);
+            for i=1:k-1   
+                if (~wave_type_mat(i,1))
+                    wt='P';             
+                else
+                    wt='S';
+                end
+                
+                if (~wave_type_mat(i,2))
+                    wave_type=[wave_type ; char(strcat(wt,'P')) ];
+                else
+                    wave_type=[wave_type ; char(strcat(wt,'S')) ];
+                end
+            end
+            
+            objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
             
         end
         
@@ -268,7 +290,7 @@ classdef Transducers
             
             % checks on string p_1 and p_2
             n_p=length(platten_list);
-           
+            
             pl_f=char(zeros(n_p,1));
             for p=1:n_p
                 pl_f(p)= platten_list(p).face;
@@ -285,18 +307,22 @@ classdef Transducers
             % find source on platten
             ks_1= find(((TransducerObj.platten==platten_list(p_first).id) .* (TransducerObj.type=='S'))==1);
             % kr_1= find(((TransducerObj.platten==platten_list(p_first).id) .* (TransducerObj.type=='R'))==1)-TransducerObj.n_sources;
-             
+            
+            s_type=TransducerObj.wave_mode(ks_1);
             % find receiver on opposite platten
             %  ks_2= find(((TransducerObj.platten==platten_list(p_two).id) .* (TransducerObj.type=='S'))==1);
             kr_2= find(((TransducerObj.platten==platten_list(p_two).id) .* (TransducerObj.type=='R'))==1) -TransducerObj.n_sources;
-            
+            r_type=TransducerObj.wave_mode(kr_2);
             myMap=zeros((length(ks_1) )*(length(kr_2)),2);
-%            myMap=zeros((length(ks_1)+length(ks_2))*(length(kr_1)+length(kr_2)),2);
+            %            myMap=zeros((length(ks_1)+length(ks_2))*(length(kr_1)+length(kr_2)),2);
+            wave_type_mat=zeros((length(ks_1) )*(length(kr_2)),2);
             
             k=1;
             for i=1:length(ks_1)
                 myMap(k:k+length(kr_2)-1,1)=ks_1(i);
                 myMap(k:k+length(kr_2)-1,2)=kr_2;
+                wave_type_mat(k:k+length(kr_2)-1,1)=s_type(i);
+                wave_type_mat(k:k+length(kr_2)-1,2)=r_type;
                 k=k+length(kr_2);
             end
             
@@ -305,9 +331,24 @@ classdef Transducers
             %                 myMap(k:k+length(kr_1)-1,2)=kr_1;
             %                 k=k+length(kr_1);
             %             end
-            myMap=myMap(1:k-1,:);
+            myMap=myMap(1:k-1,:); 
+            wave_type=[];
             
-            objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap);
+            for i=1:k-1   
+                if (~wave_type_mat(i,1))
+                    wt='P';             
+                else
+                    wt='S';
+                end
+                
+                if (~wave_type_mat(i,2))
+                    wave_type=[wave_type ; char(strcat(wt,'P')) ];
+                else
+                    wave_type=[wave_type ; char(strcat(wt,'S')) ];
+                end
+            end
+            
+            objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
             
         end
         
@@ -319,7 +360,7 @@ classdef Transducers
             n_s = length(find(TransducerObj.type=='S'));
             n_r = length(find(TransducerObj.type=='R'));
             myMap = zeros((n_s*n_r),2);
-            
+            wave_type_mat=zeros((n_s*n_r),2);
             n_p = length(platten_list);
             pl_f = char(zeros(n_p,1));
             for p = 1:n_p
@@ -351,21 +392,41 @@ classdef Transducers
                 
                 % find source on platten
                 ks= find(((TransducerObj.platten==platten_list(p).id) .* (TransducerObj.type=='S'))==1);
+                s_type=TransducerObj.wave_mode(ks);
                 % find receiver on opposite platten
                 kr= find(((TransducerObj.platten==platten_list(p_opp).id) .* (TransducerObj.type=='R'))==1) -TransducerObj.n_sources;
-                
+                 r_type=TransducerObj.wave_mode(kr);
                 % loop on sources on that platten & add in map
                 for i=1:length(ks)
                     myMap(k:k+length(kr)-1,1)=ks(i);
                     myMap(k:k+length(kr)-1,2)=kr;
+                     wave_type_mat(k:k+length(kr)-1,1)=s_type(i);
+                    wave_type_mat(k:k+length(kr)-1,2)=r_type;
                     k=k+length(kr);
                 end
-                
-                
+
             end
+            
             myMap=myMap(1:k-1,:);
             
-            objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap);
+            wave_type=[];
+            
+            for i=1:k-1   
+                if (~wave_type_mat(i,1))
+                    wt='P';             
+                else
+                    wt='S';
+                end
+                
+                if (~wave_type_mat(i,2))
+                    wave_type=[wave_type ; char(strcat(wt,'P')) ];
+                else
+                    wave_type=[wave_type ; char(strcat(wt,'S')) ];
+                end
+            end
+            
+            
+            objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
             
         end
         
