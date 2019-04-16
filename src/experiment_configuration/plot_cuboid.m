@@ -8,7 +8,7 @@ function fig_handle = plot_cuboid(lengths,origin,varargin)
 %   (from lower left bottom corner)
 %
 %   PLOTCUBE(LENGTHS,ORIGIN,FIGHANDLE) displays the cuboid in the existing
-%   graphical object with the handle FIGHANDLE
+%   graphical object with the handle FIG_HANDLE
 
 % create vertices for unit cube
 tmp1 = [0 0 0; 1 0 0; 1 1 0; 0 1 0; 0 0 1; 1 0 1; 1 1 1; 0 1 1];

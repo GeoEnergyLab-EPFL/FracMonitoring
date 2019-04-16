@@ -12,7 +12,7 @@ classdef SourceReceiverPairs
         
         XS_XR ;  % matrix of real containing coord of source , cord of receivers - n_pair rows by 6 colum
         
-        wave_type;% vector of length n_pair with type of wave - string ?
+        wave_type;% vector of length n_pair with type of wave  
         
     end
     
@@ -20,6 +20,8 @@ classdef SourceReceiverPairs
         
         distances;
         n_pairs;
+        
+        directions; % get directions between source - receiver
         
     end
     
@@ -65,8 +67,8 @@ classdef SourceReceiverPairs
             obj.XS_XR=[xyz_source xyz_receiver];
             
             if (length(varargin)==1)
-                [nr,nc]=size(varargin{1});
-                if (nc==1) && (nr==length(my_map(:,1)) )
+                [nr,~]=size(varargin{1});
+                if  (nr==length(my_map(:,1)) )
                     obj.wave_type=varargin{1};
                 else
                     disp('error in wave type numbered entered - not consistent with number of S-R pairs in the map entered');
@@ -74,7 +76,7 @@ classdef SourceReceiverPairs
                 end
             else
                 aux=zeros(length(my_map(:,1)),1);
-                aux(:)='P';
+                aux(:)='P'; % by default longitudinal
                 obj.wave_type=char(aux);
                 
             end
@@ -96,6 +98,12 @@ classdef SourceReceiverPairs
             [n_pairs ~ ] =size(obj.SRmap);
             
         end
+        % directions of rays for all source-receiver pairs
+        % to be checked.
+        function directions = get.directions(obj)
+            dX=obj.XS_XR(:,1:3)-obj.XS_XR(:,4:6);
+            directions = dX./vecnorm(dX,2,2); % normalized
+        end
         
         % get distance for a given pair in the map
         function d=getDistancePairI(obj,i)
@@ -113,7 +121,7 @@ classdef SourceReceiverPairs
             
         end
         
-        
+
         function the_comb_map=CombineMaps(obj1,obj2)
             % add two SourceReceiverPairs objects   -> impossible to do
             % with shitty matlab oo
