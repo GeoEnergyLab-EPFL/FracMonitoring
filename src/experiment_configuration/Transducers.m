@@ -356,7 +356,7 @@ classdef Transducers
         
         
         % constructor of  S-R pairs for opposite platten pairs
-        function objpair = AllOppositePairs(TransducerObj,platten_list)
+        function objpair = AllPairsOppositePlattens(TransducerObj,platten_list)
             % - do not choose the S-R which are on the same platten  only the S-R pairs
             % All S-R pairs beside the one on the same platten than the source
             n_s = length(find(TransducerObj.type=='S'));
