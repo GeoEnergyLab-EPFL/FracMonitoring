@@ -215,6 +215,8 @@ classdef Transducers
         end
         
         % distances for all source-receiver pairs
+                % this function should be a method of source -receiver pair
+                % object -> unneeded here
         function dists = transducerdists(obj,platten_list)
             xyzTransd = calc_global_coord(obj,platten_list);
             dx = xyzTransd(:,1)-xyzTransd(:,1)';

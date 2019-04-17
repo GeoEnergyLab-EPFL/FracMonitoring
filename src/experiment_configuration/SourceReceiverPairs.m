@@ -10,16 +10,16 @@ classdef SourceReceiverPairs
         
         SRmap;  % matrix of integer containing the mapping   Source Receiver  size( n_pair by 2)
         
-        XS_XR ;  % matrix of real containing coord of source , cord of receivers - n_pair rows by 6 colum
+        XS_XR ;  % matrix of real containing coord of source , cord of receivers - n_pair rows by 6 columns
         
-        wave_type;% vector of length n_pair with type of wave  
+        wave_type;% vector of length n_pair with type of wave - char e.g. 'SP'  'PP'  'PS'
         
     end
     
     properties (Dependent)
         
-        distances;
-        n_pairs;
+        distances; %  distance between source and receiver
+        n_pairs; %  number of source -receiver pairs
         
         directions; % get directions between source - receiver
         
