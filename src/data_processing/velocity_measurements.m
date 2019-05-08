@@ -3,7 +3,7 @@
 
 
 function [soundVelocity, soundVelocityPart, soundVelocityGI] = ...
-    velocity_measurements(dataRef, dataset, Tmin, Tmax, timestep, method)
+    velocity_measurements(dataRef, dataset, Tmin, Tmax, dt, method, blockSizes)
 
 % Ref signal:Swave = 162209, Pwave = 163814
 
@@ -21,6 +21,7 @@ function [soundVelocity, soundVelocityPart, soundVelocityGI] = ...
 % Tmax -- end of a timeframe for a direct signal, \mus
 % dt -- time step
 % method -- which method do you want to start - Full data correlation, or selected Part or Graphical Input
+% blockSizes -- size of Block, 3 directions
 
 %Plot setting
 set(0,'DefaultAxesColor',[1 1 1]) 
@@ -46,10 +47,11 @@ addpath('../src/experiment_configuration/');
 
 %% Length between source and receiver
    
-length = 250; % normally from SampleBlock -- TBD
+% length = 250; % normally from SampleBlock -- TBD
+length = blockSizes(1);
 
 % time step
-dt = timestep;
+% dt = timestep;
 
     
 %% load data in dataSet
@@ -65,7 +67,7 @@ dt = timestep;
 %%q dataRefFilePath = strcat(dataRefPath,'.bin')
 %%q dataRef = load_data(dataRefFilePath,1,1,1);
 
-dataRef = dataRef;
+% dataRef = dataRef;
 
 
 % figure % plot dataRef
@@ -93,7 +95,7 @@ if (find(contains(method, 'Full')) > 0)
     t_propagation = lag(i)*dt; % lagTime = time propagation
 
     % Velocity
-    soundVelocity = length/(1000*t_propagation) % m/s
+    soundVelocity = length / t_propagation % m/s
 
 else
     soundVelocity = 'Not selected';
@@ -144,7 +146,7 @@ if (find(contains(method, 'Part')) > 0)
     t_propagationPart = (Tmin+lagPart(j))*dt; % lagTime = timepropagation
 
     % VelocityPart
-    soundVelocityPart = length/(1000*(t_propagationPart)) % m/s
+    soundVelocityPart = length / t_propagationPart % m/s
 
 else
     soundVelocityPart = 'Not selected';
@@ -160,7 +162,7 @@ if (find(contains(method, 'GI')) > 0)
     % [~, ~, jsonhdr] = load_header(dataSetJsonPath); % read from header
     % Fs = jsonhdr.ActiveAcousticInfos.SamplingFrequency_MHz_*1E6; %freq of measurements 
     % dt = 1/Fs;  % time step
-    dt = timestep;
+    % dt = timestep;
 
     %create a timelist for easy plotting
     dataTime(:,1) = 0;
@@ -183,7 +185,7 @@ if (find(contains(method, 'GI')) > 0)
 
     [x,y] = ginput(2)
     t_propagationGI = abs(x(2) - x(1))
-    soundVelocityGI = length*1000/t_propagationGI % m / timeScale
+    soundVelocityGI = length * 10^6 / t_propagationGI % m / timeScale
     % soundVelocityGI = 0;
 else
     soundVelocityGI = 'Not selected';
