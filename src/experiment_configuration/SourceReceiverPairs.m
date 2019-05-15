@@ -142,14 +142,14 @@ classdef SourceReceiverPairs
         function fig_handle=plotdirectrays(obj,varargin)
             
             % narg = length(varargin);
-            if ~isempty(varargin)
-                if isgraphics(varargin{1})
-                    fig_handle = figure(varargin{1});
-                else
-                    fig_handle = figure;
-                end
+            if ~isempty(varargin)&&isgraphics(varargin{1})
+                fig_handle = figure(varargin{1});
             else
                 fig_handle = figure;
+                axis square
+                xlabel('Easting (m)')
+                ylabel('Northing (m)')
+                zlabel('Height (m)')
             end
             hold on
             

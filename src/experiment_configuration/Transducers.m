@@ -186,20 +186,20 @@ classdef Transducers
             
             narg = length(varargin);
             
-            if ~isempty(varargin)
-                if isgraphics(varargin{1})
-                    fig_handle = figure(varargin{1});
-                else
-                    fig_handle = figure;
-                end
+            if ~isempty(varargin)&&isgraphics(varargin{1})
+                fig_handle = figure(varargin{1});
             else
                 fig_handle = figure;
+                axis square
+                xlabel('Easting (m)')
+                ylabel('Northing (m)')
+                zlabel('Height (m)')
             end
             hold on
             
             xyzTransd = calc_global_coord(obj,platten_list);
-            plotstyleS = 'r.';
-            plotstyleR = 'b.';
+            plotstyleS = 'ro';
+            plotstyleR = 'bo';
             if narg>=2
                 if ischar(varargin{2})
                     plotstyleS = varargin{2};
@@ -207,11 +207,18 @@ classdef Transducers
                 end
                 
             end
-            
+            % change marker size
+            mkrsize = 10;
+            % plot sources in 3D
             plot3(xyzTransd(1:obj.n_sources,1),xyzTransd(1:obj.n_sources,2),...
-                xyzTransd(1:obj.n_sources,3),plotstyleS);
+                xyzTransd(1:obj.n_sources,3),plotstyleS,'MarkerSize',mkrsize);
+            % plot receivers in 3D
             plot3(xyzTransd(obj.n_sources+1:end,1),xyzTransd(obj.n_sources+1:end,2),...
-                xyzTransd(obj.n_sources+1:end,3),plotstyleR);
+                xyzTransd(obj.n_sources+1:end,3),plotstyleR,'MarkerSize',mkrsize);
+            % add black marker to identify shear transducers
+            plot3(xyzTransd(obj.wave_mode==1,1),xyzTransd(obj.wave_mode==1,2),...
+                xyzTransd(obj.wave_mode==1,3),'.k')
+            
         end
         
         % distances for all source-receiver pairs
@@ -238,13 +245,13 @@ classdef Transducers
         
         
         % Construct  S-R pairs object without the intra-platten pairs
-        function objpair=AllexceptintraPairs(TransducerObj,platten_list)
+        function objpair = AllexceptintraPairs(TransducerObj,platten_list)
             % - do not choose the S-R which are on the same platten  only the S-R pairs
             % All S-R pairs beside the one on the same platten than the source
             n_s = length(find(TransducerObj.type=='S'));
             n_r = length(find(TransducerObj.type=='R'));
-            myMap=zeros((n_s*n_r),2);
-            wave_type_mat=zeros((n_s*n_r),2);
+            myMap = zeros((n_s*n_r),2);
+            wave_type_mat = zeros((n_s*n_r),2);
             ch=linspace(1,n_r,n_r)';
             k=1;
             for i=1:n_s
@@ -281,11 +288,11 @@ classdef Transducers
                 end
             end
             
-            objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
+            objpair = SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
             
         end
         
-        function objpair=TwoPlattenPairs(TransducerObj,platten_list,p_1,p_2)
+        function objpair = TwoPlattenPairs(TransducerObj,platten_list,p_1,p_2)
             
             % create SRPairs object for opposite platten taking the source
             % of platten p_1 and the receivers on platten p_2
@@ -350,7 +357,7 @@ classdef Transducers
                 end
             end
             
-            objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
+            objpair = SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
             
         end
         
@@ -428,7 +435,7 @@ classdef Transducers
             end
             
             
-            objpair=SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
+            objpair = SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
             
         end
         

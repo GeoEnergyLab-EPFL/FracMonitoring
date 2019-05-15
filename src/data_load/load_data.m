@@ -48,13 +48,19 @@ fseek(fid,hdrsize+(sequences(1)-1)*seqsize,'bof');
 
 % create empty array
 datatmp2 = zeros(qq,np,length(receivers),length(sources));
+% display progress
+textprogressbar('loading sequences:    ');
 for ii = 1:length(sequences)
     % set pointer to beginning of sequence
     fseek(fid,hdrsize+(sequences(ii)-1)*seqsize,'bof');
     datatmp1 = fread(fid,[np,nr*ns],'double');
     datatmp1 = reshape(datatmp1,np,nr,ns);
     datatmp2(ii,:,:,:) = datatmp1(:,receivers,sources);
+    pgrs = floor(ii/length(sequences)*100);
+    textprogressbar(pgrs);
 end
+textprogressbar(' done');
+
 fclose(fid);
 % reshape data array to 4D with dimensions in intuitive order
 dataout = permute(datatmp2,[1 2 4 3]);
