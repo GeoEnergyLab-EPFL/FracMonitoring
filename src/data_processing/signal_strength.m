@@ -18,6 +18,7 @@ else
     h_SNR = figure;
 end
 
+
 % compute L2-norm strength
 normAll = squeeze(vecnorm(dataset(endnoise:end,:,:),2,1));
 
@@ -26,6 +27,7 @@ figure(h_SNR)
 imagesc(1:size(dataset,3),1:size(dataset,2),normAll)
 axis square
 caxis([0 1]*2.5)
+colorbar
 colormap('jet')
 xlabel('Receiver #')
 ylabel('Source #')
