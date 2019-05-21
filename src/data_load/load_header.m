@@ -10,6 +10,11 @@ json_header = jsondecode(fileread(filename));
 length_E = json_header.TestInfos.BlockDimensions_mm_.E_W_mm_*1E-3;
 length_N = json_header.TestInfos.BlockDimensions_mm_.N_S_mm_*1E-3;
 length_T = json_header.TestInfos.BlockDimensions_mm_.T_B_mm_*1E-3;
+for direc = ['E','N','T']
+    if isempty(eval(['length_' direc]))
+        eval(['length_' direc ' = 250;'])
+    end
+end
 myBlock = SampleBlock([length_E, length_N, length_T]);
 
 %%%% PLATTEN
