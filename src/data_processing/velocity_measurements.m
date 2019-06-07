@@ -43,9 +43,9 @@ addpath('../FracMonitoring/src/experiment_configuration/');
             dataTime(:,i+1) = dataTime(:,i)+dt;
         end
 
- figure % plot dataRef
- disp('reference signal read, source')
- plot(dataTime*1E6,dataRef)
+ % figure % plot dataRef
+ % disp('reference signal read, source')
+ % plot(dataTime*1E6,dataRef)
 
 [~,nr] = size (dataSet(1,:)); %number of receivers
 
