@@ -451,6 +451,107 @@ classdef Transducers
             
         end
         
+        
+        % constructor of diffraction S-R pairs for one side (N-E-S-W)
+        % Dong Liu-19/09/2019
+        function objpair = SidePairsNeighborPlattens(TransducerObj,platten_list, sidemarker)
+            % sidemarker can be 'N', 'S', 'E', 'W' only, representing
+            % different sides
+            % We only take four transducers on the top and four on the
+            % bottom to build the diffracted pairs for the given side. Note 
+            % that it is possible to have more transducers on the top and 
+            % bottom plattens to build the pairs
+            
+            n_p=length(platten_list);
+            pl_f=char(zeros(n_p,1));
+            for p=1:n_p
+                pl_f(p)= platten_list(p).face;
+            end
+            
+            if isempty(intersect(pl_f,sidemarker))
+                disp(' error in given platten face or corresponding platten list input!');
+                return
+            end
+            
+            p_side = find(pl_f==sidemarker) ;
+            
+            % find source on platten
+            ks_1= find(((TransducerObj.platten==platten_list(p_side).id) .* (TransducerObj.type=='S'))==1);
+            
+            % find receiver on platten
+            kr_2= find(((TransducerObj.platten==platten_list(p_side).id) .* (TransducerObj.type=='R'))==1) -TransducerObj.n_sources;
+            
+            switch sidemarker
+                case 'N'
+                    knb=1:4; 
+                    % one can add more transducers here if necessary, the values should be channel values plus one.
+                case 'S'
+                    knb=5:8;
+                case 'E'
+                    knb=9:12;
+                case 'W'
+                    knb=13:16;
+                otherwise
+                    disp(' error in given platten face or corresponding platten list input!')
+            end
+            ks_tb=zeros(length(knb),1);
+            kr_tb=ks_tb;
+            for ki=1:length(knb)
+                disp(find(((TransducerObj.channel==knb(ki)-1) .* (TransducerObj.type=='S'))==1));
+                ks_tb(ki,1)=find(((TransducerObj.channel==knb(ki)-1) .* (TransducerObj.type=='S'))==1);
+                kr_tb(ki,1)=find(((TransducerObj.channel==knb(ki)-1) .* (TransducerObj.type=='R'))==1) -TransducerObj.n_sources;
+            end
+
+            s_type=TransducerObj.wave_mode(ks_1);
+            r_type=TransducerObj.wave_mode(kr_2);
+            stb_type=TransducerObj.wave_mode(ks_tb);
+            rtb_type=TransducerObj.wave_mode(kr_tb);
+            
+            myMap=zeros((length(ks_1) )*(length(kr_tb))+(length(ks_tb) )*(length(kr_2)),2);
+            wave_type_mat=zeros((length(ks_1) )*(length(kr_tb))+(length(ks_tb) )*(length(kr_2)),2);
+            
+            % Source on the side platten and receiver on the top-bottom
+            % platten
+            k=1;
+            for i=1:length(ks_1)
+                myMap(k:k+length(kr_tb)-1,1)=ks_1(i);
+                myMap(k:k+length(kr_tb)-1,2)=kr_tb;
+                wave_type_mat(k:k+length(kr_tb)-1,1)=s_type(i);
+                wave_type_mat(k:k+length(kr_tb)-1,2)=rtb_type;
+                k=k+length(kr_tb);
+            end
+            
+            % Source on the top-bottom platten and receiver on the side
+            % platten
+            for j=1:length(ks_tb)
+                myMap(k:k+length(kr_2)-1,1)=ks_tb(j);
+                myMap(k:k+length(kr_2)-1,2)=kr_2;
+                wave_type_mat(k:k+length(kr_2)-1,1)=stb_type(j);
+                wave_type_mat(k:k+length(kr_2)-1,2)=r_type;
+                k=k+length(kr_2);
+            end            
+            
+            myMap=myMap(1:k-1,:); 
+            wave_type=[];
+            
+            for i=1:k-1   
+                if (~wave_type_mat(i,1))
+                    wt='P';             
+                else
+                    wt='S';
+                end
+                
+                if (~wave_type_mat(i,2))
+                    wave_type=[wave_type ; char(strcat(wt,'P')) ];
+                else
+                    wave_type=[wave_type ; char(strcat(wt,'S')) ];
+                end
+            end
+            
+            objpair = SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
+            
+        end                
+        
     end
     
 end
