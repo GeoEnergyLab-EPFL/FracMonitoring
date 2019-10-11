@@ -1,4 +1,4 @@
-function  Pair_info = load_diffraction(fpath, sidemarker, wave_type, seqnb)
+function  [Pair_info, Pair_acqT] = load_diffraction(fpath, sidemarker, wave_type, seqnb)
 % Dong Liu -- 10/10/2019
 % function to load the arrival time for a given sequence
 %
@@ -10,6 +10,7 @@ function  Pair_info = load_diffraction(fpath, sidemarker, wave_type, seqnb)
 %
 % Output:
 % Pair_info: [S channel number, R channel number and arrival time]
+% Pair_acqT: acquisition time, format_date time
 % count the pairs in all these four directions
 
 [n_pair,full_path, SRmap] = getPairInfo(fpath, sidemarker, wave_type);
@@ -17,6 +18,7 @@ function  Pair_info = load_diffraction(fpath, sidemarker, wave_type, seqnb)
 % get the arrival time and the source-receiver pair where the arrival time
 % of the selected sequence is picked
 Pair_info = zeros(sum(n_pair),3);
+Pair_acqT = [];
 i_ct = 0;
 for i = 1:sum(n_pair)
     [arrival_info] = importdata(full_path{i},' ');
@@ -30,9 +32,17 @@ for i = 1:sum(n_pair)
     if picked_idx > 0 && (picked_s == SRmap(i,1)) && (picked_r == SRmap(i,2))
         i_ct = i_ct+1;
         Pair_info(i_ct,:) = [picked_s picked_r arrival_info.data(picked_idx,2)];% the arrival time is in \mus
+        if isempty(Pair_acqT)
+            picked_seq = string(arrival_info.textdata(picked_idx,1:end));
+            disp(picked_seq);
+            picked_seq = strcat(picked_seq(1:end,1)," ", picked_seq(1:end,2));
+            Pair_acqT = datetime(picked_seq,'InputFormat','dd-MMM-yy HH:mm:ss');
+        end
     end
 end
 Pair_info(i_ct+1:sum(n_pair),:) = []; % delete the rows where there is no information
+
+% one sequence corresponding to one acquisition time
 
 end
 

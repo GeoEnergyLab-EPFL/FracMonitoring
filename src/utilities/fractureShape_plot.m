@@ -1,4 +1,4 @@
-function [fig_handle] = fractureShape_plot(seq_i,m,Solid,SRPairs,myBlock,myTransducers,myPlattens,AcqTime,varargin)
+function [fig_handle] = fractureShape_plot(m,Solid,SRPairs,myBlock,myTransducers,myPlattens,varargin)
 % Dong Liu -- 10/10/2019
 % plot the ellipse fracture with diffracted points and SR pairs and the
 % corresponding opening if there is any
@@ -6,7 +6,8 @@ function [fig_handle] = fractureShape_plot(seq_i,m,Solid,SRPairs,myBlock,myTrans
 % argument 1: the fig handle
 % argument 2: the path for opening sequence number
 % argument 3: the path for opening
-% the last two arguments can be easily adjusted when the format of the opening
+% argument 4: the global sequence number you want to plot the fracture opening  
+% the last three arguments can be easily adjusted when the format of the opening
 % changes
 
 ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
@@ -32,11 +33,11 @@ plotdiffrays(SRPairs,res(:,2),res(:,3),res(:,4),fig_handle);% one should plot th
 plotEllipse(ell,fig_handle,'b.-');
 hold on
 plot3(res(:,2),res(:,3),res(:,4),'.g','MarkerSize',30);
-title(['\fontsize{40}Seq ' num2str(seq_i) ': ' datestr(AcqTime(seq_i))])
+
 
 % fracture opening plot
-if narg>=3
-    if ~isempty(varargin) && ~isempty(varargin{2}) && ~isempty(varargin{3})
+if narg>=4
+    if ~isempty(varargin) && ~isempty(varargin{2}) && ~isempty(varargin{3}) && ~isempty(varargin{4})
         SRtrsn = SourceReceiverPairs(myTransducers,myPlattens,[1:16;1:16]');
         trsn_x = SRtrsn.XS_XR(1:end,1); % x-coordinate
         trsn_y = SRtrsn.XS_XR(1:end,2); % y-coordinate
@@ -45,7 +46,8 @@ if narg>=3
         [seq_list] = importdata(varargin{2},'\t');
         % load the fracture opening
         [width_profile] = importdata(varargin{3},'\t');
-        [~,idx] = ismember(seq_i,seq_list');% we can do this since the picked-sequence is the global sequence
+        seq_i = varargin{4}; % the sequence number at which you want to plot the opening
+        [~,idx] = ismember(seq_i,seq_list');
         width_picked = (width_profile(idx,1:end))'/max(max(width_profile))*0.02;
         % 0.02 here is just for plotting the amplitude of opening
         hold on
