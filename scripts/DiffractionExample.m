@@ -1,7 +1,6 @@
 %% This is an example of picking the diffraction arrivals
 % GEL - EPFL - 2019
 % Dong Liu - 10/10/2019 
-% make sure the src and subfolders are in the matlab path
 
 %% cleanup first, set global parameters
 close all
@@ -53,14 +52,15 @@ Fn = 0.5*Fs;    % Nyquist frequency (Hz)
 
 fbin = [datapath datafold num2str(starttime) '.bin'];
 
+%% set the sequences you would like to read 
+seqrange = 1:120;
+
 %%  read acoustic data from the binary file 
-[dataseq1, nq] = load_data(fbin,1:120,1:32,1:32);
+[dataseq1, nq] = load_data(fbin,seqrange,1:32,1:32);
 % continous sequences are much encouraged  
 
 %% load timing data
 AcqTime = load_timing(fbin); % in date hours min sec format .... can be transformed in sec format
-% time of the loaded sequence
-AcSeqT = AcqTime(1:120);
 
 %% loading the low rate data and set the estimated fracture initiation time
 [lowrateData, lowrateTime, lowrateHeader] = load_lowrate(fbin);
@@ -77,7 +77,7 @@ tinject = lowrateTime(idtinject);
 % time in min for the lowrate data
 tlowrate = (datenum(lowrateTime)-datenum(tinject))*d2s/60; 
 % time in seconds starting from the injection time for the selected sequences
-tseq = (datenum(AcSeqT)-datenum(tinject))*d2s; 
+tseq = (datenum(AcqTime(seqrange))-datenum(tinject))*d2s; 
 
 % set the estimated initiation time as reference for the further
 % diffraction picking
@@ -178,7 +178,7 @@ SRs_select = SourceReceiverPairs(myTransducers,myPlattens,...
     SRSidediff.SRmap(fnb(:,1),:),SRSidediff.wave_type(fnb(:,1),:));
 fig_b = plotblockwithplattens(myBlock,myPlattens);
 fig_handle = plotdirectrays(SRs_select,fig_b);
-disp(['You have ' num2str(length(fnb)) ' good pairs to look at on Side' num2str(sidemarker)]);
+disp(['You have ' num2str(length(fnb)) ' good pairs to look at on Side ' num2str(sidemarker)]);
 
 %% to have a closer look with a given time range for this specific pair 
 % and start to pick the time arrival
@@ -196,16 +196,20 @@ arrivaling = arrivalin;
 arrivalingg = arrivalin;
 
 %% pick the arrival for each chosen sequence in the detailed plot where the chosen seq and only its neighboring sequences are shown in the plot
+% plot the signals with one fixed reference signal is preferred
+% one can leave the last argument empty to do this, if the last argument is
+% not empty, one ask the function to plot the difference between the
+% neighboring local sequences
 close all
-arrivalin = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, SR_select, pval, 'local',[],11);
+arrivalin = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, SR_select, pval, 'local',[],10,[],[]);
 
 %% pick the arrival based on the plot of the chosen sequences
 close all
-arrivaling = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, SR_select, pval, 'semi-global');
+arrivaling = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, SR_select, pval, 'semi-global',[],[],[],[]);
 
 %% pick the arrival based on the plot of all the sequences loaded
 close all
-arrivalingg = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, SR_select, pval, 'global',[],90);
+arrivalingg = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, SR_select, pval, 'global',[],10,1,[]);
 
 %% check the arrival-picking results
 close all
@@ -224,8 +228,8 @@ disp('Do not close the figure and pick the arrival-time curve you want to save')
 
 %% get the data points from the chosen curve
 arrival_time = Handle.YData;
-sequence_picking = Handle.XData;
-
+sequence_local = Handle.XData;% what we pick here is the local sequence
+sequence_picking = seqrange(sequence_local);
 %% write the arrival and the pair into a specific file
 % we can write all into one file
 % here for the sake of easy modification and re-picking for each pair, we
@@ -237,11 +241,11 @@ close all
 arrivalin = [sequence_picking' arrival_time'];
 % please set your local saved path
 % to be changed, once we need to save the data in the hf-gel-nas
-localpath = ['/Users/dongliu/AcousticHF/' datafold sidemarker '/ds'];
+localpath = ['/Users/dongliu/AcousticHF/' datafold sidemarker '/'];
 filename = ['S' num2str(SR_select.SRmap(1,1)) 'R' num2str(SR_select.SRmap(1,2)) SR_select.wave_type '.txt'];
-seqnb = arrivalin(1:end,1);
+seqnb = arrivalin(1:end,1); % here is the global sequence number
 
-aux = [cellstr(datestr(AcSeqT(seqnb))) num2cell(seqnb) num2cell(arrivalin(1:end,2))...
+aux = [cellstr(datestr(AcqTime(seqnb))) num2cell(seqnb) num2cell(arrivalin(1:end,2))...
     num2cell((SR_select.SRmap(1,1)*ones(length(arrivalin),1))) num2cell(SR_select.SRmap(1,2)*ones(length(arrivalin),1))];
 % we save the channel number here for source and receivers
 % writecell function can be used directly in R2019a, instead of using a
@@ -268,8 +272,8 @@ est_firstarrival = disdiff_first/(mySolid.Vp)*1e6; % in (\mus) we can calculate 
 %
 % set the path where you saved your arrival data
 localpath = ['/Users/dongliu/AcousticHF/' datafold sidemarker '/'];
-source_channel = 9; % got from the saved file name
-receiver_channel = 23; % got from the saved file name
+source_channel = 27; % got from the saved file name
+receiver_channel = 9; % got from the saved file name
 picked_wavetype = 'PP'; % got from the saved file name
 filename=['S' num2str(source_channel) 'R' num2str(receiver_channel) picked_wavetype '.txt']; % should be better to create the side marker subfolder
 
@@ -288,12 +292,20 @@ picked_seq = strcat(picked_seq(1:end,1)," ", picked_seq(1:end,2));
 picked_date = datetime(picked_seq,'InputFormat','dd-MMM-yy HH:mm:ss');
 % return sequence number 
 [tf,picked_idx] = ismember(picked_date,AcqTime);% to find the absolute sequence number
+if picked_idx == arrival_info.data(1:end,1)
+    disp('Sequence member matching the time');
+else
+    disp('Sequence member does not match with the time');
+end
 % load the original data and plot 
 
 endnoise = 250;
-
-% % % when we only want to check one pair or several pairs, we do not want to
-% % % load all the data
+%
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+% % % when we only want to check one pair or several pairs, we do not want%%%
+% % % to load all the data                                                %%%
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%
 % ref_seq=1; % set the reference signal, we take the first sequence here
 % datacheck=load_data(fbin,[ref_seq picked_idx'],source_channel,receiver_channel);
 % basesignal=datacheck(1,endnoise:end);
@@ -317,21 +329,23 @@ endnoise = 250;
 
 % % % % when we want to check all the pairs or more pairs let's say more than 5
 % % % % pairs, it is better to load all the data in advance
+% we need to find the local sequence in order to check
+[~, local_idx] = ismember(picked_idx,seqrange);
 close all
-figcheck = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, picked_pair, pval, ' ',[picked_idx,picked_arrival],11);% We set Seq11 as the referenced sequence
+figcheck = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, picked_pair, pval, ' ',[local_idx,picked_arrival],11,1,1);% We set Seq11 as the referenced sequence
 title(['S' num2str(picked_pair.SRmap(1,1)) '-R' num2str(picked_pair.SRmap(1,2)) ' of type '  num2str(picked_pair.wave_type(1,:))  ' distance='  num2str(picked_pair.distances(1))],'fontsize',14);
 
 %% Not satisfied? Correct arrivals for some sequences of this pair
 % choose the sequences you wanna pick and rewrite the file with the corrected values
 close all
-figcorrect = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, picked_pair, pval, ' ',[picked_idx,picked_arrival],11,1);
+figcorrect = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, picked_pair, pval, ' ',[local_idx,picked_arrival],11,1);
 title(['S' num2str(picked_pair.SRmap(1,1)) '-R' num2str(picked_pair.SRmap(1,2)) ' of type '  num2str(picked_pair.wave_type(1,:))  ' distance='  num2str(picked_pair.distances(1))],'fontsize',14);
 
 disp('choose the sequences you wanna repick and finish selection with right click');
 [seqnbc,] = getpts();% the last point is determined by the right click
 seqnbc = floor(seqnbc+0.5); % the sequence number you wanna correct the arrival time
 seqnbc = (sort(seqnbc))'; 
-[~, correct_idx] = ismember(seqnbc,picked_idx);
+[~, correct_idx] = ismember(seqnbc,local_idx);
 newpicked_arrival = picked_arrival;
 
 for c=1:length(seqnbc)
@@ -345,13 +359,14 @@ for c=1:length(seqnbc)
 end
 
 close all
-[~] = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, picked_pair, pval, ' ',[picked_idx,picked_arrival],11);
+[~] = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, picked_pair, pval, ' ',[local_idx,picked_arrival],11);
 title(['S' num2str(picked_pair.SRmap(1,1)) '-R' num2str(picked_pair.SRmap(1,2)) ' of type '  num2str(picked_pair.wave_type(1,:))  ' distance='  num2str(picked_pair.distances(1))],'fontsize',14);
 hold on
-plot(picked_idx,newpicked_arrival)
+plot(local_idx,newpicked_arrival)
 
 %% rewrite all the info in the file with the same name
 picked_arrival = newpicked_arrival;
+% we always save the global sequence number
 auxc =[cellstr(datestr(picked_date)) num2cell(picked_idx) num2cell(picked_arrival) num2cell((picked_pair.SRmap(1,1)*ones(length(picked_idx),1))) num2cell(picked_pair.SRmap(1,2)*ones(length(picked_idx),1))];
 % we save the channel number here for source and receivers
 % writecell function can be used directly in R2019a, instead of using a
@@ -372,10 +387,12 @@ SR_repick = SourceReceiverPairs(myTransducers,myPlattens,[source_channel, receiv
 %initialize the arrival_time info
 
 close all
-arrival_repick = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, SR_repick, pval, 'global',[picked_idx, picked_arrival],11);% one can choose 'global', 'local' or 'semi-global'
+arrival_repick = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, SR_repick, pval, 'global',[local_idx, picked_arrival],11);% one can choose 'global', 'local' or 'semi-global'
 seqnb = arrival_repick(1:end,1);
+% we save always the global sequence number
+seqnb = (seqrange(seqnb))';
 
-auxrepick = [cellstr(datestr(AcSeqT(seqnb))) num2cell(seqnb) num2cell(arrival_repick(1:end,2)) num2cell((SR_repick.SRmap(1,1)*ones(length(arrival_repick),1))) num2cell(SR_repick.SRmap(1,2)*ones(length(arrival_repick),1))];
+auxrepick = [cellstr(datestr(AcqTime(seqnb))) num2cell(seqnb) num2cell(arrival_repick(1:end,2)) num2cell((SR_repick.SRmap(1,1)*ones(length(arrival_repick),1))) num2cell(SR_repick.SRmap(1,2)*ones(length(arrival_repick),1))];
 %% rewrite the file with the same name
 fid = fopen([localpath filename],'wt');
 for ii = 1:size(auxrepick,1)% 

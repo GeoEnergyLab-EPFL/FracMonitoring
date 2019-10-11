@@ -22,13 +22,25 @@ function [arrival_info]=diffractions_picking(activeInfo,dataseq1, T, endnoise, m
 % sequence is calculated from
 % optional argument3: indicate whether to plot the wiggle plot or not for
 % the plotting part
+% optional argument4: indicate whether to plot the neighboring difference
+% it is deactived by default
+%
+%% determine whether to plot the differences between neighboring sequences
+narg = length(varargin);
+neborplot=0; % the plot option is deactived by default.
+if narg>=4 && ~isempty(varargin{4})
+    disp('Plot only the difference between neighboring sequences')
+    neborplot=1;
+end
+
 %% get the active acoustic info
 np = activeInfo.NumberOfPoints;
 Fs = activeInfo.SamplingFrequency_MHz_*1E6;
 dt = 1/Fs;  % time step
+nseq = size(dataseq1,1);
 
 %% set the range of the travel time desired to plot
-[fig1] = diffraction_image(dataseq1, T, endnoise, mySRPair,seqInitiate,0,[endnoise*dt np*dt]*10^6);
+[fig1] = diffraction_image(dataseq1, T, endnoise, mySRPair,seqInitiate,neborplot,[endnoise*dt np*dt]*10^6);
 
 disp('Click on the figure to get the travel time range')
 [~,trange] = ginput(2);
@@ -39,7 +51,6 @@ disp('Travel time range set')
 
 %% Determine whether to plot the arrival time if it is saved previously
 
-narg = length(varargin);
 arrival_input = zeros(1,2);
 
 if ~isempty(varargin) && ~isempty(varargin{1})
@@ -63,7 +74,7 @@ if narg>=2
 end
 
 %% Set the picked sequences range
-[fig2] = diffraction_image(dataseq1, T, endnoise, mySRPair,seqInitiate,0,[min(trange) max(trange)],ref_info);
+[fig2] = diffraction_image(dataseq1, T, endnoise, mySRPair,seqInitiate,neborplot,[min(trange) max(trange)],ref_info);
 disp('Click on the figure to get the range of the plotted sequence')
 [seqrange,~] = ginput(2);
 disp('Set already the range of sequence to pick')
@@ -79,7 +90,13 @@ arrivalin = zeros(xinmax-xinmin+1,2);
 switch plotoption
     case 'global' % plot all the loaded sequences
         allwiggle = squeeze(dataseq1(1:end,tinmin:tinmax,mySRPair.SRmap(1,1),mySRPair.SRmap(1,2)));
-        [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
+        
+        if neborplot == 1
+            dataSubswiggle = [zeros(1,size(allwiggle,2)); allwiggle(2:end,1:end)-allwiggle(1:end-1,1:end)];
+        else
+            [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
+        end
+
         figure
         imagesc((1:size(allwiggle,1))',1e6*T(tinmin:tinmax)',(dataSubswiggle(1:end,1:end))',[min(min(dataSubswiggle)),max(max(dataSubswiggle))]);
         wiggle(1e6*T(tinmin:tinmax)',(1:size(allwiggle,1))',(dataSubswiggle(1:end,1:end))','+');
@@ -93,11 +110,11 @@ switch plotoption
         line([seqInitiate seqInitiate], [1e6*T(endnoise) 1e6*T(end)],'Color', 'red','LineStyle', '--')
         set(gcf,'Position',[100 100 1000 1000])
         ylim([min(trange) max(trange)])
-        xticks(1:5:size(allwiggle,1)) % this is true only when we read the sequences continously from 1
+        xlim([1 size(allwiggle,1)]) % this is the local sequence number
         hold on
         for in_i = xinmin:xinmax
             set(gcf,'NumberTitle','off');
-            set(gcf,'Name',['Pick arrival time for Seq' num2str(in_i)]);
+            set(gcf,'Name',['Pick arrival time for local Seq' num2str(in_i)]);
             if in_i > xinmin
                 plot(arrivalin(1:in_i-xinmin,1),arrivalin(1:in_i-xinmin,2),'ro')
             end
@@ -110,7 +127,17 @@ switch plotoption
         disp('End of the arrival-picking');
     case 'semi-global' % plot all the sequences waiting to be picked
         allwiggle = squeeze(dataseq1(xinmin:xinmax,tinmin:tinmax,mySRPair.SRmap(1,1),mySRPair.SRmap(1,2)));
-        [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
+        if neborplot == 1
+            if xinmin==1
+            dataSubswiggle = [zeros(1,size(allwiggle,2)); allwiggle(2:end,1:end)-allwiggle(1:end-1,1:end)];
+            else
+            firstseq = squeeze(dataseq1(xinmin-1,tinmin:tinmax,mySRPair.SRmap(1,1),mySRPair.SRmap(1,2)))-allwiggle(1,1:end);
+            dataSubswiggle = [firstseq; allwiggle(2:end,1:end)-allwiggle(1:end-1,1:end)];
+            end
+        else
+            [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
+        end
+        
         figure
         imagesc((xinmin:xinmax)',1e6*T(tinmin:tinmax)',(dataSubswiggle(1:end,1:end))',[min(min(dataSubswiggle)),max(max(dataSubswiggle))]);
         wiggle(1e6*T(tinmin:tinmax)',(xinmin:xinmax)',(dataSubswiggle(1:end,1:end))','+');
@@ -127,11 +154,10 @@ switch plotoption
         line([seqInitiate seqInitiate], [1e6*T(endnoise) 1e6*T(end)],'Color', 'red','LineStyle', '--')
         xlim([xinmin-0.5 xinmax+0.5])
         ylim([min(trange) max(trange)])
-        xticks(1:5:size(allwiggle,1)) % this is true only when we read the sequences continously from 1
         hold on
         for in_i = xinmin:xinmax
             set(gcf,'NumberTitle','off');
-            set(gcf,'Name',['Pick arrival time for Seq' num2str(in_i)]);
+            set(gcf,'Name',['Pick arrival time for local Seq ' num2str(in_i)]);
             if in_i>xinmin
                 plot(arrivalin(1:in_i-xinmin,1),arrivalin(1:in_i-xinmin,2),'ro')
             end
@@ -147,27 +173,45 @@ switch plotoption
         nbspare=10; % sequences shown in the wiggle before and after the picking sequence, this value can be changed if needed
         % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
         for in_i = xinmin:xinmax
-            allwiggle = squeeze(dataseq1(in_i-nbspare:in_i+nbspare,tinmin:tinmax,mySRPair.SRmap(1,1),mySRPair.SRmap(1,2)));
-            [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
+            i_start = 1;
+            i_end = nseq;
+            if in_i-nbspare >=1
+                i_start=in_i-nbspare;
+            end
+            if in_i+nbspare <= nseq
+                i_end=in_i+nbspare;
+            end
+
+            allwiggle = squeeze(dataseq1(i_start:i_end,tinmin:tinmax,mySRPair.SRmap(1,1),mySRPair.SRmap(1,2)));
+            if neborplot == 1
+                if i_start==1
+                    dataSubswiggle = [zeros(1,size(allwiggle,2)); allwiggle(2:end,1:end)-allwiggle(1:end-1,1:end)];
+                else % in case of not the first local sequence, we compare the first seq with the one next to it
+                    firstseq = squeeze(dataseq1(i_start-1,tinmin:tinmax,mySRPair.SRmap(1,1),mySRPair.SRmap(1,2)))-allwiggle(1,1:end);
+                    dataSubswiggle = [firstseq; allwiggle(2:end,1:end)-allwiggle(1:end-1,1:end)];
+                end
+            else
+                [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
+            end
 
             fig_ini = in_i;
             figure(fig_ini)
             hold on
             set(gcf,'NumberTitle','off');
-            set(gcf,'Name',['Pick arrival time for Seq' num2str(in_i)]);
-            imagesc((in_i-nbspare:in_i+nbspare)',1e6*T(tinmin:tinmax)',(dataSubswiggle(1:end,1:end))',[min(min(dataSubswiggle)),max(max(dataSubswiggle))]);
+            set(gcf,'Name',['Pick arrival time for local Seq ' num2str(in_i)]);
+            imagesc((i_start:i_end)',1e6*T(tinmin:tinmax)',(dataSubswiggle(1:end,1:end))',[min(min(dataSubswiggle)),max(max(dataSubswiggle))]);
             colormap('gray')
             axis ij
             hold on
             axis tight
-            wiggle(1e6*T(tinmin:tinmax)',(in_i-nbspare:in_i+nbspare)',(dataSubswiggle(1:end,1:end))','+');
+            wiggle(1e6*T(tinmin:tinmax)',(i_start:i_end)',(dataSubswiggle(1:end,1:end))','+');
             hold on
             if in_i > xinmin
             plot(arrivalin(1:in_i-xinmin,1),arrivalin(1:in_i-xinmin,2),'ro')
             end
             hold on
             line([seqInitiate seqInitiate], [1e6*T(endnoise) 1e6*T(end)],'Color', 'red','LineStyle', '--')
-            xlim([in_i-nbspare in_i+nbspare])
+            xlim([i_start i_end])
             ylim([min(trange) max(trange)])
             [~,arrivalin_i] = ginput(1);
             arrivalin(in_i-xinmin+1,1) = in_i;% sequence number
@@ -177,7 +221,7 @@ switch plotoption
         arrival_info = arrivalin;
         disp('End of the arrival-picking');
         close all% close the current figures
-        [~] = diffraction_image(dataseq1, T, endnoise, mySRPair,seqInitiate,0,[min(trange) max(trange)],ref_info);
+        [~] = diffraction_image(dataseq1, T, endnoise, mySRPair,seqInitiate,neborplot,[min(trange) max(trange)],ref_info);
         hold on 
         plot(arrivalin(1:end,1),arrivalin(1:end,2),'r')
     otherwise
@@ -185,7 +229,17 @@ switch plotoption
         close all% close the current figures
         
         allwiggle = squeeze(dataseq1(1:end,tinmin:tinmax,mySRPair.SRmap(1,1),mySRPair.SRmap(1,2)));
-        [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
+        if neborplot == 1
+            if xinmin==1
+                    dataSubswiggle = [zeros(1,size(allwiggle,2)); allwiggle(2:end,1:end)-allwiggle(1:end-1,1:end)];
+            else % in case of not the first local sequence, we compare the first seq with the one next to it
+                    firstseq = squeeze(dataseq1(xinmin-1,tinmin:tinmax,mySRPair.SRmap(1,1),mySRPair.SRmap(1,2)))-allwiggle(1,1:end);
+                    dataSubswiggle = [firstseq; allwiggle(2:end,1:end)-allwiggle(1:end-1,1:end)];
+            end
+        else
+            [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
+        end
+        
         fig=figure
         imagesc((1:size(allwiggle,1))',1e6*T(tinmin:tinmax)',(dataSubswiggle(1:end,1:end))',[min(min(dataSubswiggle)),max(max(dataSubswiggle))]);
         if narg ==3 && ~isempty(varargin{3})
@@ -201,7 +255,7 @@ switch plotoption
         line([seqInitiate seqInitiate], [1e6*T(endnoise) 1e6*T(end)],'Color', 'red','LineStyle', '--')
         set(gcf,'Position',[100 100 1000 1000])
         ylim([min(trange) max(trange)])
-        xticks(1:5:size(allwiggle,1)) % this is true only when we read the sequences continously from 1
+        xlim([1 size(allwiggle,1)]) % this is the local sequence
         hold on
         plot(arrival_input(1:end,1),arrival_input(1:end,2),'k')
         arrival_info=fig;% return the figure object

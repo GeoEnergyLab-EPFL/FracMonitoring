@@ -39,8 +39,8 @@ for j=1:mySRPair.n_pairs
     [dataSubs] = base_signal_substraction(allsignal,basesignal);
     
     if diffindicator == 1
-        newdataSub=[zeros(1,size(dataSubs,2)); dataSubs(1:end-1,1:end)];
-        newdataSubs=dataSubs-newdataSub; 
+        newdataSubs=[zeros(1,size(dataSubs,2)); dataSubs(2:end,1:end)-dataSubs(1:end-1,1:end)];
+        % newdataSubs=dataSubs-newdataSub; 
         % dataSubs=a(n)-a(0); newdataSubs=a(n)-a(n-1)
         dataSubs=newdataSubs;
     end
@@ -65,7 +65,7 @@ for j=1:mySRPair.n_pairs
     end
     hold on
 
-    xlabel('Sequence ()')
+    xlabel('Local sequence ()')
     ylabel('Travel time (\mu s)')
     hold on
     line([seqInitiate seqInitiate], [1e6*T(endnoise) 1e6*T(end)],'Color', 'red','LineStyle', '--')
