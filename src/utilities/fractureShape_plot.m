@@ -48,8 +48,12 @@ if narg>=4
         [width_profile] = importdata(varargin{3},'\t');
         seq_i = varargin{4}; % the sequence number at which you want to plot the opening
         [~,idx] = ismember(seq_i,seq_list');
-        width_picked = (width_profile(idx,1:end))'/max(max(width_profile))*0.02;
+        if idx>0
+            width_picked = (width_profile(idx,1:end))'/max(max(width_profile))*0.02;
         % 0.02 here is just for plotting the amplitude of opening
+        else
+            width_picked = zeros(16,1);
+        end
         hold on
         widthplot1 = fill3([trsn_x(1); trsn_x(1:8); trsn_x(8)],[trsn_y(1);trsn_y(1:8); trsn_y(8)],[trsn_z(1);trsn_z(1:8)+width_picked(1:8);trsn_z(8)],'r');
         alpha(widthplot1,0.2)
