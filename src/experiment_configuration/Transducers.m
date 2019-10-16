@@ -233,6 +233,101 @@ classdef Transducers
             
         end
         
+        % 2D plot of the transducer locations for one face of the block
+        % Dong Liu -- 16/09/2019
+        function fig_handle = transducerplot2D(obj,platten_list,sidemarker,varargin)
+            % open figure from passed handle if it exists
+            % optional argument 1 is figure handle
+            % optional argument 2 is plotting style
+            % optional argument 3 is channel numbering (matlab style from
+            % 1), boolean 
+            
+            narg = length(varargin);
+            
+            if ~isempty(varargin)&&~isempty(varargin{1})&&isgraphics(varargin{1})
+                fig_handle = figure(varargin{1});
+            else
+                fig_handle = figure;
+            end
+            hold on
+            
+            xyzTransd = calc_global_coord(obj,platten_list);
+            plotstyleS = 'ro';
+            plotstyleR = 'bo';
+            % selected plot style if option selected
+            if narg>=2
+                if ~isempty(varargin{1})&&ischar(varargin{2})
+                    plotstyleS = varargin{2};
+                    plotstyleR = varargin{2};
+                end
+                
+            end
+            % change marker size
+            mkrsize = 10;
+            
+            switch sidemarker
+                case 'N'
+                    i=1;
+                    j=3;
+                case 'S'
+                    i=1;
+                    j=3;
+                case 'E'
+                    i=2;
+                    j=3;
+                case 'W'
+                    i=2;
+                    j=3;
+                case 'T'
+                    i=1;
+                    j=2;
+                case 'B'
+                    i=1;
+                    j=2;
+                otherwise
+                    disp('Wrong input for side indicator')
+                    return;
+            end
+            
+            % add transducer numbering if option selected
+            if narg>=3
+                if ~isempty(varargin{3})&&isnumeric(varargin{3})
+                    offset = 0.004; % offset
+                    for i_platten =1:length(platten_list)
+                        if platten_list(i_platten).face == sidemarker
+                            i_plattenid=platten_list(i_platten).id;
+                        end
+                    end
+                    for i_transducer = 1:obj.n_transducers
+                        if obj.platten(i_transducer) == i_plattenid
+                            % plot sources and receivers in 2D
+                            if i_transducer<=obj.n_sources
+                                plotstyle=plotstyleS;
+                            else
+                                plotstyle=plotstyleR;
+                            end
+                            plot(xyzTransd(i_transducer,i),...
+                            xyzTransd(i_transducer,j),plotstyle,'MarkerSize',mkrsize);
+                            % add black marker to identify shear transducers
+                            if obj.wave_mode(i_transducer)==1
+                                plot(xyzTransd(i_transducer,i),...
+                                xyzTransd(i_transducer,j),'.k')
+                            end
+                            
+                            text(xyzTransd(i_transducer,i)+offset,...
+                                xyzTransd(i_transducer,j)+offset,...
+                        num2cell(obj.channel(i_transducer)));
+                        end
+
+                    end
+                end
+            end
+            
+        end
+        
+        
+        
+        
         % distances for all source-receiver pairs
                 % this function should be a method of source -receiver pair
                 % object -> unneeded here
