@@ -1,3 +1,6 @@
+% Class for an ellipse
+% 
+% Brice Lecampion 
 classdef Ellipse
     
     properties

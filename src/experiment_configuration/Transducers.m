@@ -183,10 +183,12 @@ classdef Transducers
             % open figure from passed handle if it exists
             % optional argument 1 is figure handle
             % optional argument 2 is plotting style
+            % optional argument 3 is channel numbering (matlab style from
+            % 1), boolean 
             
             narg = length(varargin);
             
-            if ~isempty(varargin)&&isgraphics(varargin{1})
+            if ~isempty(varargin)&&~isempty(varargin{1})&&isgraphics(varargin{1})
                 fig_handle = figure(varargin{1});
             else
                 fig_handle = figure;
@@ -200,8 +202,9 @@ classdef Transducers
             xyzTransd = calc_global_coord(obj,platten_list);
             plotstyleS = 'ro';
             plotstyleR = 'bo';
+            % selected plot style if option selected
             if narg>=2
-                if ischar(varargin{2})
+                if ~isempty(varargin{1})&&ischar(varargin{2})
                     plotstyleS = varargin{2};
                     plotstyleR = varargin{2};
                 end
@@ -218,6 +221,15 @@ classdef Transducers
             % add black marker to identify shear transducers
             plot3(xyzTransd(obj.wave_mode==1,1),xyzTransd(obj.wave_mode==1,2),...
                 xyzTransd(obj.wave_mode==1,3),'.k')
+            
+            % add transducer numbering if option selected
+            if narg>=3
+                if ~isempty(varargin{3})&&isnumeric(varargin{3})
+                    offset = 0.004;     % offset
+                    text(xyzTransd(:,1)+offset,xyzTransd(:,2)+offset,xyzTransd(:,3)+offset,...
+                        num2cell(obj.channel));
+                end
+            end
             
         end
         
