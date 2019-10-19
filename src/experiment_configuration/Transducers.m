@@ -307,7 +307,8 @@ classdef Transducers
                                 plotstyle=plotstyleR;
                             end
                             plot(xyzTransd(i_transducer,i),...
-                            xyzTransd(i_transducer,j),plotstyle,'MarkerSize',mkrsize);
+                            xyzTransd(i_transducer,j),plotstyle,'MarkerSize',mkrsize);   
+                            
                             % add black marker to identify shear transducers
                             if obj.wave_mode(i_transducer)==1
                                 plot(xyzTransd(i_transducer,i),...
@@ -463,6 +464,30 @@ classdef Transducers
                     wave_type=[wave_type ; char(strcat(wt,'S')) ];
                 end
             end
+            
+            objpair = SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
+            
+        end
+        
+        % constructor of one source or receiver on one platten and all the 
+        % receivers or sources on the opposite platten
+        % Dong Liu -- 17/09/2019
+        function objpair = SinglePlattenPairs(TransducerObj,platten_list,p_1,p_2,t_1,SRindicator)
+            
+            % create SRPairs object for opposite platten taking the source
+            % of platten p_1 and the receivers on platten p_2
+            
+            % checks on string p_1 and p_2
+            TwoplattenPairs=TwoPlattenPairs(TransducerObj,platten_list,p_1,p_2);
+            if SRindicator == 'S'
+                idx=find(TwoplattenPairs.SRmap(:,1) == t_1);
+            elseif SRindicator == 'R'
+                idx=find(TwoplattenPairs.SRmap(:,2) == t_1);
+            else
+                disp('Wrong input, only S or R is acceptable');
+            end
+            myMap = TwoplattenPairs.SRmap(idx,:);
+            wave_type = TwoplattenPairs.wave_type(idx,:);
             
             objpair = SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
             
