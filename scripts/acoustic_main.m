@@ -196,6 +196,35 @@ dataRef = load_data([datapath '19-01-11/163814.bin'],1,1,1)';
 Vp_test = velocity_measurements(dataset,dataRef,dt);
 
 
+%% V ADVANCED start
+
+%% Separating P and S from class, create a matrix  S | R | distance | type | angle
+
+oppSR = AllPairsOppositePlattens(myTransducers,myPlattens); % change to not only opposite to not on the same platten !!! TO DO
+
+VmatrixIn.SRmap = oppSR.SRmap; % S/R
+VmatrixIn.Ttype = string(oppSR.wave_type); % type P/S
+VmatrixIn.Length = oppSR.distances; % length
+VmatrixIn.N_pairs = oppSR.n_pairs; % n_pairs
+VmatrixIn.Angle = oppSR.directions; % angle??
+VmatrixIn.dt = dt; %dt, tipestep b/w measurements
+
+%% load data for V only useful SR pair /// CREATE FOR ALL SEQ TBD!!!
+for iSR=1:VmatrixIn.N_pairs % for all SRmap
+    VmatrixIn.dataset(:,iSR) = dataseq1(1,:,VmatrixIn.SRmap(iSR,1),VmatrixIn.SRmap(iSR,2)); % create a dataset in Vmatrix (dont comapre with D -- it is by receivers)
+end
+
+% Ref
+% dataset = Dd(:,1:5); % only opposite pairs and first seq ???
+% reference signal read (without a sample), p-wave
+VmatrixIn.dataRef_P = load_data([datapath '19-01-11/163814.bin'],1,1,1)'; % Ref signal:Swave = 162209, Pwave = 163814
+VmatrixIn.dataRef_S = load_data([datapath '19-01-11/162209.bin'],1,1,1)'; % Ref signal:Swave = 162209, Pwave = 163814
+
+%% V velocity function
+
+[VmatrixOut] = velocity_advanced(VmatrixIn, {30,50}, {60,80}, ["Full", "Part", "GI", "AIC"]); % Vmatrix, {Pwave Tmin, Pwave Tmax}, {S wave Tmin, Swave Tmax}, ["Full", "Part", "GI", "AIC", "STA_LTA"], dt
+
+
 %% fluid thickness 
 % define parameters
 myFluid = Fluid('glycerol');

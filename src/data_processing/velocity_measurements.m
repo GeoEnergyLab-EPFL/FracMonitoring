@@ -39,7 +39,7 @@ addpath('../FracMonitoring/src/experiment_configuration/');
 
 
         dataTime(:,1) = 0;
-        for i = 1:7999
+        for i = 1:10000
             dataTime(:,i+1) = dataTime(:,i)+dt;
         end
 
