@@ -4,14 +4,13 @@ function [fig_handle] = fractureShape_plot(m,Solid,SRPairs,myBlock,myTransducers
 % corresponding opening if there is any
 % the last two arguments decide whether to plot the fracture opening
 % argument 1: the fig handle
-% argument 2: the path for opening sequence number
-% argument 3: the path for opening
-% argument 4: the global sequence number you want to plot the fracture opening  
+% argument 2: plotstyle for ellipse or radial
+% argument 3: the path for opening sequence number
+% argument 4: the path for opening
+% argument 5: the global sequence number you want to plot the fracture opening  
 % the last three arguments can be easily adjusted when the format of the opening
 % changes
 
-ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
-res = diffractionForward(Solid,SRPairs,ell);% give one the shortest time needed for diffraction
 
 narg = length(varargin);
 if narg>=1
@@ -26,27 +25,45 @@ if narg>=1
      end
      hold on
 end
+% set the default plotstyle for the fracture geometry
+plotstyle='b.-';
+if narg>=2 && ~isempty(varargin) && ~isempty(varargin{2})
+    plotstyle=varargin{2};
+end
 
-% plot the corresponding width profile
-plotblockwithplattens(myBlock,myPlattens,fig_handle)
+plotblockwithplattens(myBlock,myPlattens,fig_handle);
+
+switch length(m)
+    case 8 % Ellipse
+        ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+        plotEllipse(ell,fig_handle,plotstyle);
+    case 6
+        ell = Radial(m(1),m(2:4),m(5),m(6));
+        plotRadial(ell,fig_handle,plotstyle);
+    otherwise
+        disp('Please check your input m-vector')
+        return;
+end
+
+res = diffractionForward(Solid,SRPairs,ell);% give one the shortest time needed for diffraction
 plotdiffrays(SRPairs,res(:,2),res(:,3),res(:,4),fig_handle);% one should plot the trays with the corresponding diffracted points
-plotEllipse(ell,fig_handle,'b.-');
+
 hold on
 plot3(res(:,2),res(:,3),res(:,4),'.g','MarkerSize',30);
 
 
 % fracture opening plot
 if narg>=4
-    if ~isempty(varargin) && ~isempty(varargin{2}) && ~isempty(varargin{3}) && ~isempty(varargin{4})
+    if ~isempty(varargin) && ~isempty(varargin{3}) && ~isempty(varargin{4}) && ~isempty(varargin{5})
         SRtrsn = SourceReceiverPairs(myTransducers,myPlattens,[1:16;1:16]');
         trsn_x = SRtrsn.XS_XR(1:end,1); % x-coordinate
         trsn_y = SRtrsn.XS_XR(1:end,2); % y-coordinate
         trsn_z = (SRtrsn.XS_XR(1:end,3)+SRtrsn.XS_XR(1:end,6))/2; % z-coordinate
         % load the global sequence number
-        [seq_list] = importdata(varargin{2},'\t');
+        [seq_list] = importdata(varargin{3},'\t');
         % load the fracture opening
-        [width_profile] = importdata(varargin{3},'\t');
-        seq_i = varargin{4}; % the sequence number at which you want to plot the opening
+        [width_profile] = importdata(varargin{4},'\t');
+        seq_i = varargin{5}; % the sequence number at which you want to plot the opening
         [~,idx] = ismember(seq_i,seq_list');
         if idx>0
             width_picked = (width_profile(idx,1:end))'/max(max(width_profile))*0.02;

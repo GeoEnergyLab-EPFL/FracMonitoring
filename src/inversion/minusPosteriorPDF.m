@@ -6,7 +6,7 @@ function [mpost]=minusPosteriorPDF(m)
  %
  %
  global prior ;
-    
+    % both for the the radial and ellipse case
     mL=minusLikelihoodEllipseDiff(m); % compute -Log Likelihood
     
     mP=minusLogPrior(prior,m);% compute -Log Prior pdf

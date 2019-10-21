@@ -38,12 +38,20 @@ for i=1:q
     m_minus(i)=mpost(i)*(1-h);
 
     m=m_plus;
-    ell=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
-    res= diffractionForward(Solid,SRPairs,ell);
+    if length(m)>6
+        shape=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+    else
+        shape=Radial(m(1),m(2:4),m(5),m(6));
+    end
+    res= diffractionForward(Solid,SRPairs,shape);
     G_plus=res(:,1);
     m=m_minus;
-    ell=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
-    res= diffractionForward(Solid,SRPairs,ell);
+    if length(m)>6
+        shape=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+    else
+        shape=Radial(m(1),m(2:4),m(5),m(6));
+    end
+    res= diffractionForward(Solid,SRPairs,shape);
     G_minus=res(:,1);
     
     X(:,i)=(G_plus-G_minus)/(2*h*mpost(i));

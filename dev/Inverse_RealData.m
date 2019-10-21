@@ -7,7 +7,7 @@ clearvars
 home
 
 % data storage location
-datastor = 'local'; % 'local' if dataset copied to local drive, 'gel-nas1', or 'enacdrives'
+datastor = 'gel-nas1'; % 'local' if dataset copied to local drive, 'gel-nas1', or 'enacdrives'
 
 
 %% choose dataset and load acquisition times
@@ -20,7 +20,8 @@ switch datastor
     case 'local'
         [~, username] = system('whoami');
         %datapath = ['/home/' username(1:end-1) '/data/'];
-        datapath = ['/Users/bricelecampion/Documents/Work/Geomechanics/HydraulicFracturing/Experiments/local_data/'];
+        %datapath = ['/Users/bricelecampion/Documents/Work/Geomechanics/HydraulicFracturing/Experiments/local_data/'];
+        datapath = ['/Users/dongliu/AcousticHF/'];
 
 end
 
@@ -39,18 +40,6 @@ datafold = [num2str(datayear,'%02d') '-' num2str(datamonth,'%02d') '-' ...
 fjson = [datapath datafold num2str(starttime) '.json'];
 [jsonhdr,myTransducers,myPlattens,myBlock] = load_header(fjson);
 
-% load timing data
-%fbin = [datapath datafold num2str(starttime) '.bin'];
-%AcqTime = load_timing(fbin); % in date hours min sec format .... can be transformed in sec format
-
-% %% Set the sequences that you would like to look at
-% seq = [30 50 70 90];
-% seq_n = length(seq);
-% res_multiseq = zeros(seq_n,9); % sequence number + m-vector 
-% SRPairs_multiseq = cell(seq_n,1);
-% % time of the loaded sequence
-% %AcSeqT = AcqTime(seq);
-
 %% Read the diffracted arrival
 % Set the sequence, wave_type, block side and its path%
 %i_seq = 4; % change this from 1 to seq_n
@@ -61,7 +50,7 @@ sidemarker = ['N','S','E','W'];
 fpath = [datapath datafold 'diffraction_picks/'];
 
 % Read the SRmap and arrival time
-Pair_info=load_diffraction(fpath, sidemarker, wave_type, seqnb);
+[Pair_info, AcSeqT]=load_diffraction(fpath, sidemarker, wave_type, seqnb);
 
 % Check the S-R pairs
 % build the SRPair object
@@ -91,9 +80,12 @@ global prior
 
 %   a b    x y z, theta, phi psi 
 % guessed values vector a,b, center coordinate (XYZ), euler angle (alpha beta gamma)
-mp= [ .05;.05; .125;.125;.125; 0.;0.;0. ]; 
-sig_p = [.125;.125;0.02;0.02;0.005;pi/4;pi/40;pi/40]; % guessed variances
+% mp= [ .05;.05; .125;.125;.125; 0.;0.;0. ]; 
+% sig_p = [.125;.125;0.02;0.02;0.005;pi/4;pi/40;pi/40]; % guessed variances
 
+% radial case r x y z alpha beta
+mp= [.05; .125;.125;.125; 0.;0.]; 
+sig_p = [.125; 0.02;0.02;0.005;pi;pi/40]; % guessed variances
 
 prior = GaussianPrior(mp,sig_p);% build the object
 
@@ -111,7 +103,9 @@ VTR = 0.1; % stop limit for the objective function, the value of the cost functi
 D = length(mp);% number of parameters of the objective function
            
 XVmin = 0.*mp'; % vector of lower bounds XVmin(1) ... XVmin(D)
-XVmax = [.250;.250;.250;.250;.250;pi/2;pi/2;pi]'; % vector of upper bounds XVmax(1) ... XVmax(D)
+%XVmax = [.250;.250;.250;.250;.250;pi/2;pi/2;pi]'; % vector of upper bounds
+%XVmax(1) ... XVmax(D)% for the ellipse case
+XVmax = [.250;.250;.250;.250;pi/2;pi]'; % for the radial case
 NP = 10*D; % number of population members, 10D is by defaut
 itermax = 2000; % maximum number of iterations (generations)
 F = 0.8; % DE-stepsize F from interval [0, 2]
@@ -122,12 +116,16 @@ refresh = 10;
 
 %% compare the arrival time from the optmization and the measurement
 m = bestmem';
-%res_multiseq(i_seq,1:end) = [seqnb m'];
-
-%SRPairs_multiseq{i_seq} = SRPairs;
-ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+if length(m)==8 % ellipse case
+    ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+elseif length(m)==6 % radial case
+    ell = Radial(m(1),m(2:4),m(5),m(6));
+else
+    disp('Please check your input vector');
+end 
 res = diffractionForward(Solid,SRPairs,ell);% give one the shortest time needed for diffraction
 figure
+hold on
 title('model vs data');
 %plot(res(:,1)*1e6,'ob')
 errorbar(res(:,1)*1e6,d*1e6,ones(length(d),1)*sig_d*1e6,'b')
@@ -138,27 +136,16 @@ hold on
 %plot(d*1e6); hold on; % the real arrival time
 %errorbar([1:length(d)]',res(:,1)*1e6,ones(length(d),1)*sig_d*1e6,'b')
 plot([1:length(d)]',res(:,1)*1e6,'*-r'); % the optimized arrival time
-xlabel('Source-Receiver Pair Number') % here the label is not clear it is the diffracted SR pick
+xlabel('Different Source-Receiver Pairs') 
 ylabel('Arrival Time (\mu s)')
 legend('real arrival time','calculated arrival time')
 
 
-%%
-ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
-res = diffractionForward(Solid,SRPairs,ell);% give one the shortest time needed for diffraction
-
-fig_handle = figure;
-plotblockwithplattens(myBlock,myPlattens,fig_handle)
-
+%% plot the fracture ellipse with diffracted waves
+fig_handle = figure('units','normalized','outerposition',[0 0 1 1]);
+fig_handle = fractureShape_plot(m,Solid,SRPairs,myBlock,myTransducers,myPlattens,fig_handle)
 hold on
-plotdiffrays(SRPairs,res(:,2),res(:,3),res(:,4),fig_handle);% one should plot the trays with the corresponding diffracted points
-
-hold on
-plotEllipse(ell,fig_handle,'b.-');
-hold on
-plot3(res(:,2),res(:,3),res(:,4),'.g','MarkerSize',30);
-
-
+title(['\fontsize{40}Seq ' num2str(seqnb) ': ' datestr(AcSeqT)])
 
 %% RUNNING A  Marckov-Chain-Monte-Carlo / Metropolis-Hasting algorithm
 
@@ -186,7 +173,7 @@ n_res=2; % subsampling
 [MPost,Ctilde_all,W]=ProcessingMCMC(accept,PXf,Xf,k_o,stab,n_res,@minusPosteriorPDF);
 
 %%
-% quadratic approximation of the posterior variaance
+% quadratic approximation of the posterior variance
 [Ctilde]=Posterior_Covariance_Matrix_ellipse(mpost);
 sig_app=diag(Ctilde).^0.5;
 sig_app'
@@ -203,53 +190,38 @@ sig_app_x'
  
 m=mpost
 msig=mpost+sigpost;
-ellpost=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
-ellpostsig=Ellipse(msig(1),msig(2),msig(3:5),msig(6),msig(7),msig(8));
-res= diffractionForward(Solid,SRPairs,ell);
 
-fig_b=plotblockwithplattens(myBlock,myPlattens)
-
-%
-fig_handle=plotdirectrays(SRdiff,fig_b);
- 
-fig_handle=plotEllipse(ellpost,fig_handle,'b');
-fig_handle=plotEllipse(ellpostsig,fig_handle,'r-');
-
+fig_handle = figure('units','normalized','outerposition',[0 0 1 1]);
+fig_handle = fractureShape_plot(m,Solid,SRPairs,myBlock,myTransducers,myPlattens,fig_handle)
 hold on
-plot3(res(:,2),res(:,3),res(:,4),'.g','MarkerSize',30);
-
+fig_handle = fractureShape_plot(msig,Solid,SRPairs,myBlock,myTransducers,myPlattens,fig_handle,'r.-')
+hold on
+title(['\fontsize{40}Seq ' num2str(seqnb) ': ' datestr(AcSeqT)])
 
 %%  saving stuff from dong - to be improved
-%%%%%%%%%%%
-%% plot with the fracture opening profile from the transmission
-widthPath = '/Users/dongliu/Documents/experimentDesignandResults/AcousticData/G01_14_03_2019/G01SCCERWidth/'; % we load the data from the SCCER-Soe Conference
-widthseqpath = [widthPath 'OpeningSequenceSCCERG01.txt'];
-widthopeningpath = [widthPath 'OpeningSCCERG01.txt'];
-fig1 = figure('units','normalized','outerposition',[0 0 1 1])
-% without opening data, one can remove the last two arguments
-fig_handle = fractureShape_plot(seqnb,m,Solid,SRPairs,myBlock,myTransducers,myPlattens,AcqTime,fig1, widthseqpath, widthopeningpath)
 
+% Initialize the saved file
+res_multiseq = cell(seq_n,5); % sequence number + m-vector 
 
-
-
-
-
-
-
-
+%% Arrange the results into array or cell and begin the calculation of the next sequence
+res_multiseq{i_seq,1} = seqnb; 
+res_multiseq{i_seq,2} = AcSeqT;
+res_multiseq{i_seq,3} = SRPairs;
+res_multiseq{i_seq,4} = m';
+res_multiseq{i_seq,5} = m';% m-vector from Monte-Carlo method
 %% Save the results into a json file
 % One can save the data after running all the sequences one wants to look at
 % gloabl sequence  number
 for j=1:seq_n
-DiffRecord(j).seqnb=seq(j);
+DiffRecord(j).seqnb=res_multiseq{j,1};
 % solid properties
 DiffRecord(j).solid=gabbro;
 % acquisition time
-DiffRecord(j).acqT=AcSeqT(j);
+DiffRecord(j).acqT=res_multiseq{j,2};
 % SR_map used
-DiffRecord(j).SRmap=SRPairs_multiseq{j}.SRmap;
-DiffRecord(j).mDE=res_multiseq(j,2:end);
-DiffRecord(j).mMCMC=res_multiseq(j,2:end);% resMC
+DiffRecord(j).SRmap=res_multiseq{j,3}.SRmap;
+DiffRecord(j).mDE=res_multiseq{j,4};
+DiffRecord(j).mMCMC=res_multiseq{j,5};% res_multiseq{j,5} maybe?
 DiffRecord(j).pickedArrival=Pair_info(1:end,3)*1e-6;
 % Simulation parameters
 DiffRecord(j).variance=vv;
@@ -276,27 +248,26 @@ fig2 = figure('units','normalized','outerposition',[0 0 1 1])
 for i = 1:nb_seq
     m_i = Shape_fracture(i).mDE;
     SRdiff_i = SourceReceiverPairs(myTransducers,myPlattens,Shape_fracture(i).SRmap);
-    fractureShape_plot(Shape_fracture(i).seqnb,m_i,Material_gabbro,SRdiff_i,...
-        myBlock,myTransducers,myPlattens,AcqTime,fig2);%,widthseqpath, widthopeningpath);
-    
+    fractureShape_plot(m_i,Material_gabbro,SRdiff_i,...
+        myBlock,myTransducers,myPlattens,fig2);%,[],widthseqpath, widthopeningpath);
+    hold on
+    title(['\fontsize{40}Seq ' num2str(Shape_fracture(i).seqnb) ': ' Shape_fracture(i).acqT])
     pause(2)
     if i<nb_seq
         clf;
     end
 end
 
+%% plot with the fracture opening profile from the transmission
+widthPath = '/Users/dongliu/Documents/experimentDesignandResults/AcousticData/G01_14_03_2019/G01SCCERWidth/'; % we load the data from the SCCER-Soe Conference
+widthseqpath = [widthPath 'OpeningSequenceSCCERG01.txt'];
+widthopeningpath = [widthPath 'OpeningSCCERG01.txt'];
 
-%%
-
-%%
-
-%plot(Xsp(:,1),Xsp(:,2),'.')
-
-plot(Xsp(:,8),Xsp(:,7),'.')
+fig1 = figure('units','normalized','outerposition',[0 0 1 1]);
+fig_handle = fractureShape_plot(m,Solid,SRPairs,myBlock,myTransducers,myPlattens,fig1,[],widthseqpath,widthopeningpath,seqnb);
+hold on
+title(['\fontsize{40}Seq ' num2str(seqnb) ': ' datestr(AcSeqT)])
 
 
-%%
-%%[MPost,Ctilde_all]=ProcessingMCMC(accept,PX,X,k_o,stab,mcmc_res_logfile)
 
-% [MPost,Ctilde_all]=ProcessingMCMC(accept,PXf,Xf,k_o,stab,@minusPosteriorPDF,[]);
  
