@@ -6,7 +6,7 @@ function [mLikelihood]=minusLikelihoodEllipseDiff(m)
  % Solid (solid properties object)  SRPairs (source receivers pairs)
  % and diagonal of inverse of measurmenets covariance matrix (Cdinvdiag)
  %
-    global Solid SRPairs Cdinvdiag d;
+    global Solid SRPairs Cdinvdiag d ray_type;
     
     % create ellipse object
     if(length(m)>6)
@@ -30,7 +30,7 @@ function [mLikelihood]=minusLikelihoodEllipseDiff(m)
     end
     
     
-    res= diffractionForward(Solid,SRPairs,shape);
+    res= diffractionForward(Solid,SRPairs,shape,ray_type);
 
     G=res(:,1);
     

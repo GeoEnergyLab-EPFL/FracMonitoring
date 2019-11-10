@@ -54,7 +54,7 @@ gabbro = IsotropicSolid(3050,97.5867*1e9,0.3119); % vel in m/s
 % relation between E, density and Poisson's ratio
 
 % set the input parameters
-global d  SRPairs
+global d  SRPairs ray_type
 
 sig_d = (0.5*1e-6);    % variance of measurement
 % this should be the variance of the picked arrival time, can change from case to case
@@ -95,6 +95,7 @@ for i=1:82
     d = Pair_info(1:end,3)*1e-6; % arrival time data from diffraction should in s
     SRPairs = SRdiff; % SR pairs selected
     Cdinvdiag =(1/(1*sig_d^2))*ones(length(d),1); % data inverse of variance
+    ray_type = ones(size(Pair_info,1),1);
     
     % Check the S-R pairs
     % build the SRPair object
@@ -121,7 +122,7 @@ for i=1:82
             disp('Please check your input vector');
     end
     
-    res = diffractionForward(Solid,SRPairs,ell);% give one the shortest time needed for diffraction
+    res = diffractionForward(Solid,SRPairs,ell,ray_type);% give one the shortest time needed for diffraction
     
     idx=find(abs(res(:,1)-d)*1e6 >10);
     if ~isempty(idx)

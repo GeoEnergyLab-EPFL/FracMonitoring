@@ -50,7 +50,8 @@ end
 function [nPair,full_path, SRmap]=getPairInfo(fpath, sidemarker, wave_type)
     nPair = zeros(length(sidemarker),1);
     for i = 1:length(sidemarker)
-        subfold = [fpath sidemarker(i,:) '/*' wave_type '.txt'];
+        subfold = [fpath sidemarker(i,:) '/*' '.txt'];%wave_type '.txt'];
+        % read all the files regardless of the wave_type
         localnames = dir(subfold);
         nPair(i,1) = length(localnames);
     end
@@ -60,7 +61,7 @@ function [nPair,full_path, SRmap]=getPairInfo(fpath, sidemarker, wave_type)
     SRmap = zeros(total_pair,2);
     pair_ct = 0;
     for i = 1:length(sidemarker)
-        subfold = [fpath sidemarker(i,:) '/*' wave_type '.txt'];
+        subfold = [fpath sidemarker(i,:) '/*' '.txt'];%wave_type '.txt'];
         localnames = dir(subfold);
         for j = 1:length(localnames)
             pair_ct = pair_ct+1;

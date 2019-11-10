@@ -15,7 +15,7 @@ function [Ctilde]=Posterior_Covariance_Matrix_ellipse(mpost)
 %                       covariance matrix
 %
 
-global Solid SRPairs Cdinvdiag d prior;
+global Solid SRPairs Cdinvdiag d prior ray_type;
 
 
 inv_Cd=diag(Cdinvdiag);
@@ -43,7 +43,7 @@ for i=1:q
     else
         shape=Radial(m(1),m(2:4),m(5),m(6));
     end
-    res= diffractionForward(Solid,SRPairs,shape);
+    res= diffractionForward(Solid,SRPairs,shape,ray_type);
     G_plus=res(:,1);
     m=m_minus;
     if length(m)>6
@@ -51,7 +51,7 @@ for i=1:q
     else
         shape=Radial(m(1),m(2:4),m(5),m(6));
     end
-    res= diffractionForward(Solid,SRPairs,shape);
+    res= diffractionForward(Solid,SRPairs,shape,ray_type);
     G_minus=res(:,1);
     
     X(:,i)=(G_plus-G_minus)/(2*h*mpost(i));
