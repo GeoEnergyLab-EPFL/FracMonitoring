@@ -1,4 +1,4 @@
-function [fig_handle] = fractureShape_plot(m,Solid,SRPairs,myBlock,myTransducers,myPlattens,varargin)
+function [fig_handle] = fractureShape_plot(m,Solid,SRPairs,ray_type, myBlock,myTransducers,myPlattens,varargin)
 % Dong Liu -- 10/10/2019
 % plot the ellipse fracture with diffracted points and SR pairs and the
 % corresponding opening if there is any
@@ -44,8 +44,9 @@ switch length(m)
         disp('Please check your input m-vector')
         return;
 end
-
-res = diffractionForward(Solid,SRPairs,ell);% give one the shortest time needed for diffraction
+% we set this by default for the PdP
+% ray_type=ones(size(SRPairs.SRmap,1),1);
+res = diffractionForward(Solid,SRPairs,ell,ray_type);% give one the shortest time needed for diffraction
 plotdiffrays(SRPairs,res(:,2),res(:,3),res(:,4),fig_handle);% one should plot the trays with the corresponding diffracted points
 
 hold on

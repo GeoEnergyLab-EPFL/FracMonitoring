@@ -83,6 +83,7 @@ SRPairs_all={};
 %seqnb =  90;%24
 wrong_pick={};
 i_w=0;
+ray_type_all={};
 
 for i=1:82
     
@@ -96,6 +97,7 @@ for i=1:82
     SRPairs = SRdiff; % SR pairs selected
     Cdinvdiag =(1/(1*sig_d^2))*ones(length(d),1); % data inverse of variance
     ray_type = ones(size(Pair_info,1),1);
+    ray_type_all{i} = ray_type;
     
     % Check the S-R pairs
     % build the SRPair object
@@ -213,7 +215,7 @@ for i = 1:82
     m_i = mevol(i,:);
     [~,id]=ismember(i,exception);
     if id==0
-        fractureShape_plot(m_i,Solid,SRPairs_all{i},...
+        fractureShape_plot(m_i,Solid,SRPairs_all{i},ray_type_all{i},...
             myBlock,myTransducers,myPlattens,fig2);
         i_output=i_output+1;
         hold on

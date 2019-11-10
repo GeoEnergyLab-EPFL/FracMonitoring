@@ -7,7 +7,7 @@ clearvars
 home
 
 % data storage location
-datastor = 'gel-nas1'; % 'local' if dataset copied to local drive, 'gel-nas1', or 'enacdrives'
+datastor = 'local'; % 'local' if dataset copied to local drive, 'gel-nas1', or 'enacdrives'
 
 
 %% choose dataset and load acquisition times
@@ -46,8 +46,8 @@ fjson = [datapath datafold num2str(starttime) '.json'];
 seqnb =  60;
 % we read only the PP diffraction, one can change the wave_type by changing its value
 wave_type = 'PP';
-sidemarker = ['N','S','E','W'];
-fpath = [datapath datafold 'diffraction_picks/'];
+sidemarker = ['NV';'SV';'EV';'WV';'SS';'SE';'SW';'NN';'NE';'NW';'EE';'WW';'TT'];
+fpath = [datapath datafold ];%'diffraction_picks/'];
 
 % Read the SRmap and arrival time
 [Pair_info, AcSeqT]=load_diffraction(fpath, sidemarker, wave_type, seqnb);
@@ -64,9 +64,10 @@ gabbro = IsotropicSolid(3050,97.5867*1e9,0.3119); % vel in m/s
 % relation between E, density and Poisson's ratio
 
 % set the input parameters
-global d  SRPairs 
+global d  SRPairs ray_type
 d = Pair_info(1:end,3)*1e-6; % arrival time data from diffraction should in s
 SRPairs = SRdiff; % SR pairs selected
+ray_type = ones(size(Pair_info,1),1);
 
 sig_d = (0.5*1e-6);    % variance of measurement
 % this should be the variance of the picked arrival time, can change from case to case
@@ -83,7 +84,7 @@ global prior
 % mp= [ .05;.05; .125;.125;.125; 0.;0.;0. ]; 
 % sig_p = [.125;.125;0.02;0.02;0.005;pi/4;pi/40;pi/40]; % guessed variances
 
-% radial case r x y z alpha beta
+% % radial case r x y z alpha beta
 mp= [.05; .125;.125;.125; 0.;0.]; 
 sig_p = [.125; 0.02;0.02;0.005;pi;pi/40]; % guessed variances
 
@@ -103,7 +104,7 @@ VTR = 0.1; % stop limit for the objective function, the value of the cost functi
 D = length(mp);% number of parameters of the objective function
            
 XVmin = 0.*mp'; % vector of lower bounds XVmin(1) ... XVmin(D)
-%XVmax = [.250;.250;.250;.250;.250;pi/2;pi/2;pi]'; % vector of upper bounds
+% XVmax = [.250;.250;.250;.250;.250;pi/2;pi/2;pi]'; % vector of upper bounds
 %XVmax(1) ... XVmax(D)% for the ellipse case
 XVmax = [.250;.250;.250;.250;pi/2;pi]'; % for the radial case
 NP = 10*D; % number of population members, 10D is by defaut
@@ -123,7 +124,7 @@ elseif length(m)==6 % radial case
 else
     disp('Please check your input vector');
 end 
-res = diffractionForward(Solid,SRPairs,ell);% give one the shortest time needed for diffraction
+res = diffractionForward(Solid,SRPairs,ell,ray_type);% give one the shortest time needed for diffraction
 figure
 hold on
 title('model vs data');
@@ -192,9 +193,9 @@ m=mpost
 msig=mpost+sigpost;
 
 fig_handle = figure('units','normalized','outerposition',[0 0 1 1]);
-fig_handle = fractureShape_plot(m,Solid,SRPairs,myBlock,myTransducers,myPlattens,fig_handle)
+fig_handle = fractureShape_plot(m,Solid,SRPairs,ray_type,myBlock,myTransducers,myPlattens,fig_handle)
 hold on
-fig_handle = fractureShape_plot(msig,Solid,SRPairs,myBlock,myTransducers,myPlattens,fig_handle,'r.-')
+fig_handle = fractureShape_plot(msig,Solid,SRPairs,ray_type,myBlock,myTransducers,myPlattens,fig_handle,'r.-')
 hold on
 title(['\fontsize{40}Seq ' num2str(seqnb) ': ' datestr(AcSeqT)])
 
@@ -248,7 +249,7 @@ fig2 = figure('units','normalized','outerposition',[0 0 1 1])
 for i = 1:nb_seq
     m_i = Shape_fracture(i).mDE;
     SRdiff_i = SourceReceiverPairs(myTransducers,myPlattens,Shape_fracture(i).SRmap);
-    fractureShape_plot(m_i,Material_gabbro,SRdiff_i,...
+    fractureShape_plot(m_i,Material_gabbro,SRdiff_i,ones(size(Shape_fracture(i).SRmap,1),1),...
         myBlock,myTransducers,myPlattens,fig2);%,[],widthseqpath, widthopeningpath);
     hold on
     title(['\fontsize{40}Seq ' num2str(Shape_fracture(i).seqnb) ': ' Shape_fracture(i).acqT])
@@ -264,7 +265,7 @@ widthseqpath = [widthPath 'OpeningSequenceSCCERG01.txt'];
 widthopeningpath = [widthPath 'OpeningSCCERG01.txt'];
 
 fig1 = figure('units','normalized','outerposition',[0 0 1 1]);
-fig_handle = fractureShape_plot(m,Solid,SRPairs,myBlock,myTransducers,myPlattens,fig1,[],widthseqpath,widthopeningpath,seqnb);
+fig_handle = fractureShape_plot(m,Solid,SRPairs,ray_type,myBlock,myTransducers,myPlattens,fig1,[],widthseqpath,widthopeningpath,seqnb);
 hold on
 title(['\fontsize{40}Seq ' num2str(seqnb) ': ' datestr(AcSeqT)])
 
