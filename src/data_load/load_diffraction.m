@@ -34,7 +34,7 @@ for i = 1:sum(n_pair)
         Pair_info(i_ct,:) = [picked_s picked_r arrival_info.data(picked_idx,2)];% the arrival time is in \mus
         if isempty(Pair_acqT)
             picked_seq = string(arrival_info.textdata(picked_idx,1:end));
-            disp(picked_seq);
+            %disp(picked_seq);
             picked_seq = strcat(picked_seq(1:end,1)," ", picked_seq(1:end,2));
             Pair_acqT = datetime(picked_seq,'InputFormat','dd-MMM-yy HH:mm:ss');
         end
@@ -50,7 +50,7 @@ end
 function [nPair,full_path, SRmap]=getPairInfo(fpath, sidemarker, wave_type)
     nPair = zeros(length(sidemarker),1);
     for i = 1:length(sidemarker)
-        subfold = [fpath sidemarker(i) '/*' wave_type '.txt'];
+        subfold = [fpath sidemarker(i,:) '/*' wave_type '.txt'];
         localnames = dir(subfold);
         nPair(i,1) = length(localnames);
     end
@@ -60,7 +60,7 @@ function [nPair,full_path, SRmap]=getPairInfo(fpath, sidemarker, wave_type)
     SRmap = zeros(total_pair,2);
     pair_ct = 0;
     for i = 1:length(sidemarker)
-        subfold = [fpath sidemarker(i) '/*' wave_type '.txt'];
+        subfold = [fpath sidemarker(i,:) '/*' wave_type '.txt'];
         localnames = dir(subfold);
         for j = 1:length(localnames)
             pair_ct = pair_ct+1;

@@ -8,7 +8,7 @@ clearvars
 home
 
 % data storage location
-datastor = 'gel-nas1'; % 'local' if dataset copied to local drive, 'gel-nas1', or 'enacdrives'
+datastor = 'local'; % 'local' if dataset copied to local drive, 'gel-nas1', or 'enacdrives'
 
 
 %% choose dataset and load acquisition times
@@ -21,8 +21,7 @@ switch datastor
     case 'local'
         [~, username] = system('whoami');
         %datapath = ['/home/' username(1:end-1) '/data/'];
-        datapath = ['/Users/bricelecampion/Documents/Work/Geomechanics/HydraulicFracturing/Experiments/local_data/'];
-        
+        datapath = ['/Users/dongliu/AcousticHF/'];        
 end
 
 % 2019 acquisitions
@@ -46,9 +45,8 @@ fjson = [datapath datafold num2str(starttime) '.json'];
 % diffraction data
 % we read only the PP diffraction, one can change the wave_type by changing its value
 wave_type = 'PP';
-sidemarker = ['N','S','E','W'];
-fpath = [datapath datafold 'diffraction_picks/'];
-
+sidemarker = ['NV';'SV';'EV';'WV';'NN';'SS';'WW';'EE';'NE';'NW';'SE';'SW';'TT'];
+fpath = [datapath datafold ];%'diffraction_picks/'];
 
 %
 % Set basic parameters for inverse problem
@@ -69,22 +67,24 @@ global prior
 
 %   a b    x y z, theta, phi psi
 % guessed values vector a,b, center coordinate (XYZ), euler angle (alpha beta gamma)
-% mp= [ .05;.05; .125;.125;.125; 0.;0.;0. ];
-% sig_p = [.125;.125;0.02;0.02;0.005;pi/4;pi/40;pi/40]; % guessed variances
+mp= [ .05;.05; .125;.125;.125; 0.;0.;0. ];
+sig_p = [.125;.125;0.02;0.02;0.005;pi/4;pi/40;pi/40]; % guessed variances
 
 % for the radial case r x y z alpha beta
-mp= [ .05;.125;.125;.125; 0.;0.];
-sig_p = [.125;0.02;0.02;0.005;pi/2;pi/40]; % guessed variances
+% mp= [ .05;.125;.125;.125; 0.;0.];
+% sig_p = [.125;0.02;0.02;0.005;pi/2;pi/40]; % guessed variances
 
 prior = GaussianPrior(mp,sig_p);% build the object
 
-mevol=zeros(111-24,length(m));% 22-114 %>=3traces:24-111 
-sig_evol=zeros(111-24,length(m));
+mevol=zeros(106-24,length(mp));% 22-114 %>=3traces:24-111 
+sig_evol=zeros(106-24,length(mp));
 time={};
 SRPairs_all={};
 %seqnb =  90;%24
+wrong_pick={};
+i_w=0;
 
-for i=1:(111-24)
+for i=1:82
     
     seqnb=23+i;
     % Read the SRmap and arrival time
@@ -122,6 +122,13 @@ for i=1:(111-24)
     end
     
     res = diffractionForward(Solid,SRPairs,ell);% give one the shortest time needed for diffraction
+    
+    idx=find(abs(res(:,1)-d)*1e6 >10);
+    if ~isempty(idx)
+        i_w=i_w+1;
+        wrong_pick{i_w,1}=seqnb;
+        wrong_pick{i_w,2}=Pair_info(idx,1:2);
+    end
 
 %     % save the results in a json file 
 %     DiffRecord(i).seqnb=seqnb;
@@ -130,15 +137,17 @@ for i=1:(111-24)
 %     % SR_map used
 %     DiffRecord(i).mDE=m;
  
-%     figure
-%     errorbar([1:length(d)]',d*1e6,ones(length(d),1)*sig_d*1e6,'b')
-%     hold on
-%     %plot(d*1e6); hold on; % the real arrival time
-%     %errorbar([1:length(d)]',res(:,1)*1e6,ones(length(d),1)*sig_d*1e6,'b')
-%     plot([1:length(d)]',res(:,1)*1e6,'*-r'); % the optimized arrival time
-%     xlabel('Source-Receiver Pair Number') % here the label is not clear it is the diffracted SR pick
-%     ylabel('Arrival Time (\mu s)')
-%     legend('real arrival time','calculated arrival time')
+    figure
+    errorbar([1:length(d)]',d*1e6,ones(length(d),1)*sig_d*1e6,'b')
+    hold on
+    %plot(d*1e6); hold on; % the real arrival time
+    %errorbar([1:length(d)]',res(:,1)*1e6,ones(length(d),1)*sig_d*1e6,'b')
+    plot([1:length(d)]',res(:,1)*1e6,'*-r'); % the optimized arrival time
+    xlabel('Source-Receiver Pair Number') % here the label is not clear it is the diffracted SR pick
+    ylabel('Arrival Time (\mu s)')
+    legend('real arrival time','calculated arrival time')
+    hold on
+    title(['Seq ' num2str(seqnb)])
     
     mevol(i,:)=m_opt';
     sig_evol(i,:)=sig_app_mpost';
@@ -155,41 +164,66 @@ fclose(fid);
 
 
 %% plot the evolution of the ellipse parameters
+% set the estimated fracture initiation data
+d2s=24*3600;
+t_ini=3327/60; % should be adjusted with different tests
+t_inj=datetime('14-Mar-2019 09:39:01');% 09:39:01
+% set the time for the first sequence
+t_first=(datenum(time{1})-datenum(t_inj))*d2s/60;
+
 figure
 errorbar([1:4:4*82],mevol(1:82,1),sig_evol(1:82,1))
 if (length(m)==8)
     hold on
     errorbar([1:4:4*82],mevol(1:82,2),sig_evol(1:82,2),'r')
     legend('a','b')
+    xlabel('Time (s)')
+    ylabel('Elliptical radius (m)')
 else
     legend('r')
+    xlabel('Time (s)')
+    ylabel('Radius (m)')
 end
+xticks(1:4*10:4*82)
+xticklabels(t_first+(0:10:82))
 
 figure
 plot_idx=1; % radial case
 if length(m)==8 % ellipse case
     plot_idx=2;
 end
-errorbar([1:4:4*87],mevol(:,plot_idx+1),sig_evol(:,plot_idx+1))
+errorbar([1:4:4*82],mevol(:,plot_idx+1),sig_evol(:,plot_idx+1))
 hold on
-errorbar([1:4:4*87],mevol(:,plot_idx+2),sig_evol(:,plot_idx+2),'r')
+errorbar([1:4:4*82],mevol(:,plot_idx+2),sig_evol(:,plot_idx+2),'r')
 hold on
-errorbar([1:4:4*87],mevol(:,plot_idx+3),sig_evol(:,plot_idx+3),'k')
+errorbar([1:4:4*82],mevol(:,plot_idx+3),sig_evol(:,plot_idx+3),'k')
 legend('xc','yc','zc')
+xticks(1:4*10:4*82)
+xticklabels(t_first+(0:10:82))
+xlabel('Time (s)')
+ylabel('Centeral coordinate (m)')
 
 %% output the data as a video
+% set the exception(errored) sequence
+exception=[];
 fig2 = figure('units','normalized','outerposition',[0 0 1 1])
+i_output = 0;
 for i = 1:82
     m_i = mevol(i,:);
-    fractureShape_plot(m_i,Solid,SRPairs_all{i},...
-        myBlock,myTransducers,myPlattens,fig2);
-    hold on
-    title(['\fontsize{40}Seq ' num2str(i+24-1) ': ' datestr(time{i})])
-    F(i)=getframe(fig2);
-    %pause(2)
-    if i<82
-        clf;
+    [~,id]=ismember(i,exception);
+    if id==0
+        fractureShape_plot(m_i,Solid,SRPairs_all{i},...
+            myBlock,myTransducers,myPlattens,fig2);
+        i_output=i_output+1;
+        hold on
+        title(['\fontsize{40}Seq ' num2str(i+24-1) ': ' datestr(time{i})])
+        F(i_output)=getframe(fig2);
+            %pause(2)
+        if i<82
+            clf;
+        end
     end
+
 end
 
 % create the video writer with 1 fps
@@ -215,7 +249,7 @@ if length(m)==8
     radius_eq = sqrt(mevol(:,1).*mevol(:,2));
 end
 figure
-plot(radius_eq)
+plot(23+(1:82)',radius_eq)
 xlabel('Sequence number')
 ylabel('Fracture radius (m)')
 % calculate the equivalent velocity
@@ -225,15 +259,20 @@ for j=1:length(time)-1
 end
 v_eq = (radius_eq(2:end)-radius_eq(1:end-1))./dura;
 figure
-plot(v_eq)
+plot(23+(1:82-1)',v_eq)
 xlabel('Sequence number')
 ylabel('Fracture front velocity (m/s)')
+%% Adjust the velocity 
+% get the indexes where the velocity is positive
+idxpv=find(v_eq>0);
+% one can smooth the v_calculation using moving average
 %%
-Ep=3.*39.05.*1e9/(1-0.24^2);% we need check further for this value
+Ep=39.05.*1e9/(1-0.24^2);% we need check further for this value
 Kp=2.84*1e6*sqrt(32/pi);
 mup=0.6*12.;
-ell_mk = Kp^6/Ep^4/mup^2./v_eq.^2 ;% this is very large
-dimlsdist=radius_eq(2:end)./ell_mk; % 10^-4-10^-5 the asymptote should follow the k-asymptote
+ell_mk = Kp^6/Ep^4/mup^2./(v_eq(idxpv).^2) ;% this is very large
+w_mk = Kp^4/mup./v_eq(idxpv)/Ep^3;
+dimlsdist=radius_eq(idxpv+1)./ell_mk; % 10^-4-10^-5 the asymptote should follow the k-asymptote
 %%
 % plot the expected fracture opening and compare with the results for N-S
 % and E-W
@@ -319,20 +358,23 @@ end
 % close(writerObj);
 %% Asymptote plot
 fig4 = figure('units','normalized','outerposition',[0 0 1 1]);
-xlim([0.01 1.])
-ylim([7,26])
-loglog((1:80)/80, 20*((1:80)/80).^(1/2))
+loglog(10.^(-9:-2), (10.^(-9:-2)).^(1/2))
 hold on
-loglog((1:40)/40, 20*((1:40)/40).^(2/3))
-xlabel('s/R')
-ylabel('w (\mu m)')
+loglog(10.^(-4:0),2^(1/3)*3^(5/6)*(10.^(-4:0)).^(2/3))
+xlabel('\xi_{mk}')
+ylabel('\Omega_{mk}')
+
+error_guess=0;
+%error_guess=3e-6;
 
 for j=1:82
+    [~,id_j]=ismember(j,idxpv);
+    if id_j>0
     seq_i = 23+j; % the sequence number at which you want to plot the opening
     [~,idx] = ismember(seq_i,seq_list');
 
     if idx>0
-        width_picked = (width_profile(idx,1:end))';
+        width_picked = ((width_profile(idx,1:end))'.*1e-6+error_guess)./w_mk(id_j); % omega_mk
     else
         width_picked = zeros(16,1);
     end
@@ -340,18 +382,35 @@ for j=1:82
     c_x = mevol(j,3);
     c_y = mevol(j,4);
     c_z = mevol(j,5);
-    ds = 1- sqrt((trsn_y-c_y).^2+(trsn_x-c_x).^2)./radius_eq(j);
+    ds = (radius_eq(j)- sqrt((trsn_y-c_y).^2+(trsn_x-c_x).^2))/ell_mk(id_j); % ksi_mk
 
     %plot
     figure(fig4)
     hold on
     title(['\fontsize{40}Seq ' num2str(j+24-1) ': ' datestr(time{j})])
     loglog(ds,width_picked,'.','MarkerSize',20);
-    xlim([0.01 1.])
-    ylim([7,26])
+%     loglog(ds(1),width_picked(1),'.','MarkerSize',20);
+%     loglog(ds(2),width_picked(2),'*','MarkerSize',20);
+%     loglog(ds(3),width_picked(3),'h','MarkerSize',20);
+%     loglog(ds(4),width_picked(4),'+','MarkerSize',20);
+%     loglog(ds(5),width_picked(5),'x','MarkerSize',20);
+%     loglog(ds(6),width_picked(6),'s','MarkerSize',20);
+%     loglog(ds(7),width_picked(7),'d','MarkerSize',20);
+%     loglog(ds(8),width_picked(8),'p','MarkerSize',20);
+%     loglog(ds(9),width_picked(9),'.','MarkerSize',20);
+%     loglog(ds(10),width_picked(10),'*','MarkerSize',10);
+%     loglog(ds(11),width_picked(11),'h-','MarkerSize',10);
+%     loglog(ds(12),width_picked(12),'+-','MarkerSize',10);
+%     loglog(ds(13),width_picked(13),'x-','MarkerSize',10);
+%     loglog(ds(14),width_picked(14),'s-','MarkerSize',10);
+%     loglog(ds(15),width_picked(15),'d-','MarkerSize',10);
+%     loglog(ds(16),width_picked(16),'p-','MarkerSize',10);
+    xlim([1e-9 1.])
+    ylim([1e-5,10])
 
     hold on
-    %F(j)=getframe(fig4);
+    F(j)=getframe(fig4);
+    end
 end
 
 % % create the video writer with 1 fps
@@ -369,5 +428,50 @@ end
 % % close the writer object
 % close(writerObj);
 
+%% read the relection data
+localpath = ['/Users/dongliu/AcousticHF/' datafold 'reflections/'];
+filename = [num2str(datayear,'%02d') '-' num2str(datamonth,'%02d') '-' ...
+    num2str(dataday,'%02d') '.txt'];
 
+[arrival_info] = importdata([localpath filename],' ');
+% this will import the data into textdata(date and time) and data (sequence number, arrival time and source number, receiver number)
 
+source_channel = arrival_info.data(:,3); % this is channel+1 actually, for the sake of simplication we call the variable as channel
+receiver_channel = arrival_info.data(:,4); 
+picked_wavetype = char(arrival_info.textdata(:,1));
+picked_seq1 = arrival_info.data(:,1);
+picked_seq2 = arrival_info.data(:,5);
+
+% plot the picked pair
+picked_pairs = SourceReceiverPairs(myTransducers,myPlattens,[source_channel, receiver_channel],picked_wavetype);
+fig_b = plotblockwithplattens(myBlock,myPlattens);
+fig_handle = plotdirectrays(picked_pairs,fig_b);
+
+%% plot of evolution together with reflection data
+fig2 = figure('units','normalized','outerposition',[0 0 1 1])
+for i = 1:82
+    m_i = mevol(i,:);
+    fractureShape_plot(m_i,Solid,SRPairs_all{i},...
+        myBlock,myTransducers,myPlattens,fig2);
+    hold on
+    title(['\fontsize{40}Seq ' num2str(i+24-1) ': ' datestr(time{i})])
+    hold on 
+    idx_1=find(picked_seq1<=i+24-1);
+    idx_2=find(picked_seq2<=i+24-1);
+
+    % get the reflected points considering a flat fracture plane
+    X_mid1=mean(picked_pairs.XS_XR(idx_1,[1 4]),2);
+    Y_mid1=mean(picked_pairs.XS_XR(idx_1,[2 5]),2);
+    X_mid2=mean(picked_pairs.XS_XR(idx_2,[1 4]),2);
+    Y_mid2=mean(picked_pairs.XS_XR(idx_2,[2 5]),2);
+    hold on
+    plot3(X_mid1,Y_mid1,0.125*ones(length(X_mid1),1),'ro')
+    hold on
+    plot3(X_mid2,Y_mid2,0.125*ones(length(X_mid2),1),'bo')
+    
+    F(i)=getframe(fig2);
+    %pause(2)
+    if i<82
+        clf;
+    end
+end

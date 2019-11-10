@@ -571,6 +571,107 @@ classdef Transducers
             
         end
         
+        % constructor of S-R pairs from two plattens
+        % S from platten_1 with R from platten_2 and S from platten_2 with
+        % R from platten_1
+        % Dong Liu -- 04/11/2019
+        function objpair = TwoPlattenPairsAll(TransducerObj,platten_list,p_1,p_2)
+            
+            pair_1 = TwoPlattenPairs(TransducerObj,platten_list,p_1,p_2);
+            pair_2 = TwoPlattenPairs(TransducerObj,platten_list,p_2,p_1);
+            myMap = [pair_1.SRmap; pair_2.SRmap];
+            wave_type = [pair_1.wave_type;pair_2.wave_type];
+            objpair = SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
+            
+        end
+        
+        % constructor of S-R pairs from the same platten
+        % Dong Liu -- 04/11/2019
+        function objpair = OnePlattenPairsAll(TransducerObj,platten_list,p_1)
+            
+            % create SRPairs object for one platten
+            objpair = TwoPlattenPairs(TransducerObj,platten_list,p_1,p_1);    
+        end        
+        
+        % constructor of S-R pairs for the diffraction with one side chosen
+        % and all the other transducers from the top and the bottom
+        % plattens
+        % Dong Liu -- 04/11/2019
+        function objpair = SidePlattenPairsAll(TransducerObj,platten_list,p_1)
+            
+            % create SRPairs object for neighboring platten taking the source
+            % of platten p_1 and the receivers on platten top and bottom
+            % and taking the receivers of platten p_1 and sources on the
+            % platten top and bottom
+            pair_1 = TwoPlattenPairsAll(TransducerObj,platten_list,p_1,'T');
+            pair_2 = TwoPlattenPairsAll(TransducerObj,platten_list,p_1,'B');
+            myMap = [pair_1.SRmap; pair_2.SRmap];
+            wave_type = [pair_1.wave_type;pair_2.wave_type];
+            objpair = SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);   
+        end
+        
+
+        % constructor of  S-R pairs for the same platten pairs in order to
+        % look at the reflection data for transducers on the top and the
+        % bottom plattens
+        % DongLiu -- 31/10/2019
+        % we can also look at the pairs for the two faced plattens in other
+        % two directions Dong Liu -- 01/11/2019
+        % TODO: add the direction option
+        function objpair = AllPairsSamePlattens(TransducerObj,platten_list)
+            % choose the S-R which are on the same platten
+            
+            n_sB = length(find((TransducerObj.type=='S').*(TransducerObj.platten=='A')));
+            n_rB = length(find((TransducerObj.type=='R').*(TransducerObj.platten=='A')));
+            n_sT = length(find((TransducerObj.type=='S').*(TransducerObj.platten=='B')));
+            n_rT = length(find((TransducerObj.type=='R').*(TransducerObj.platten=='B'))); 
+            myMap = zeros((n_sB*n_rB+n_sT*n_rT),2);
+            wave_type_mat=zeros((n_sB*n_rB+n_sT*n_rT),2);
+    
+            pl_f = ['A';'B'];
+            k = 1;
+            for p = 1:2     
+            % find source on platten
+                ks= find(((TransducerObj.platten==pl_f(p)) .* (TransducerObj.type=='S'))==1);
+                s_type=TransducerObj.wave_mode(ks);
+                % find receiver on opposite platten
+                kr= find(((TransducerObj.platten==pl_f(p)) .* (TransducerObj.type=='R'))==1) -TransducerObj.n_sources;
+                 r_type=TransducerObj.wave_mode(kr);
+                % loop on sources on that platten & add in map
+                for i=1:length(ks)
+                    myMap(k:k+length(kr)-1,1)=ks(i);
+                    myMap(k:k+length(kr)-1,2)=kr;
+                    wave_type_mat(k:k+length(kr)-1,1)=s_type(i);
+                    wave_type_mat(k:k+length(kr)-1,2)=r_type;
+                    k=k+length(kr);
+                end
+
+            end
+            
+            myMap=myMap(1:k-1,:);
+            
+            wave_type=[];
+            
+            for i=1:k-1   
+                if (~wave_type_mat(i,1))
+                    wt='P';             
+                else
+                    wt='S';
+                end
+                
+                if (~wave_type_mat(i,2))
+                    wave_type=[wave_type ; char(strcat(wt,'P')) ];
+                else
+                    wave_type=[wave_type ; char(strcat(wt,'S')) ];
+                end
+            end
+            
+            
+            objpair = SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
+            
+        end
+        
+        
         
         % constructor of diffraction S-R pairs for one side (N-E-S-W)
         % Dong Liu-19/09/2019
@@ -603,14 +704,18 @@ classdef Transducers
             
             switch sidemarker
                 case 'N'
-                    knb=1:4; 
+                    knb=1:4;
+                    %knb = 9:16;
                     % one can add more transducers here if necessary, the values should be channel values plus one.
                 case 'S'
                     knb=5:8;
+                    %knb=9:16;
                 case 'E'
                     knb=9:12;
+                    %knb=1:8;
                 case 'W'
                     knb=13:16;
+                    %knb=1:8;
                 otherwise
                     disp(' error in given platten face or corresponding platten list input!')
             end
