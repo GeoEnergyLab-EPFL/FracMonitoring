@@ -52,6 +52,7 @@ if isa(Solid,'IsotropicSolid')
     
     idx1=find(ray_type==1); % PdP ray
     idx2=find(ray_type==2); % PdS ray
+    idx3=find(ray_type==3); % SdP ray
     %disp(idx1);
     %disp(idx2);
     %dt=zeros(size(ray_type,1),1);
@@ -59,7 +60,8 @@ if isa(Solid,'IsotropicSolid')
     dt(idx1,:)=(dsd(idx1,:)+ddr(idx1,:))/vP;
     % case of PdS
     dt(idx2,:)=dsd(idx2,:)/vP+ddr(idx2,:)/vS;
-    
+    % case of SdP
+    dt(idx3,:)=dsd(idx3,:)/vS+ddr(idx3,:)/vP;
     %dt=(dsd+ddr)/vP;
     %dt=dsd/vP+ddr/vP;
 
