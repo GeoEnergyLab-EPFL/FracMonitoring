@@ -775,7 +775,29 @@ classdef Transducers
             
             objpair = SourceReceiverPairs(TransducerObj,platten_list,myMap,wave_type);
             
-        end                
+        end   
+        
+        
+        
+        % constructor of  S-R pairs for opposite platten pairs
+        % Dong Liu 10/11/2019 improvement when calculating the Vp,Vs
+        % choose only the facing pairs
+        function objpair = FacingPairs(TransducerObj,platten_list)
+            ks= 1:32;
+            s_type=TransducerObj.wave_mode(ks);
+            % loop on sources on that platten & add in map
+            wave_type=[];
+            for i=1:length(s_type)
+                if s_type(i)
+                    wave_type=[wave_type; char(strcat('S','S')) ];
+                else
+                    wave_type=[wave_type; char(strcat('P','P')) ];
+                end
+            end
+
+            objpair = SourceReceiverPairs(TransducerObj,platten_list,[1:32;1:32]',wave_type);
+            
+        end
         
     end
     
