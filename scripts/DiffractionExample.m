@@ -130,8 +130,11 @@ endnoise = 250; % burning period for EM noise from the source excitation
 %% Diffraction starts from here.Choose the diffractions on one side N-S-E-W 
 % During the whole picking process, please do not close the figures when 
 % not asked to do so
-sidemarker = 'E'; % the input would be 'W','E','S'or'N'
-SRSidediff = SidePairsNeighborPlattens(myTransducers,myPlattens,sidemarker);
+% sidemarker = 'S'; % the input would be 'W','E','S'or'N'
+% SRSidediff = SidePairsNeighborPlattens(myTransducers,myPlattens,sidemarker);
+sidemarker = 'WT'; % WV->WT+WB
+% SRSidediff = OnePlattenPairsAll(myTransducers,myPlattens,'N');->NN
+SRSidediff = TwoPlattenPairsAll(myTransducers,myPlattens,'W','T')
 fig_b = plotblockwithplattens(myBlock,myPlattens);
 fig_handle = plotdirectrays(SRSidediff,fig_b);
 
@@ -152,7 +155,7 @@ pval = vmin+(tinitiate-tseq(vmin))/pinterval;
 
 % plot the diffraction curves for all the pairs
 close all
-[~] = diffraction_image(dataseq1, T, endnoise, SRSidediff, pval,1,[endnoise*dt np*dt]*10^6,11);
+[~] = diffraction_image(dataseq1, T, endnoise, SRSidediff, pval,0,[endnoise*dt np*dt]*10^6,11);
 % 11 represents for the reference sequence, it can be also a range of
 % sequences like [5 8 11]
 % 1 represents that we plot the difference of the neighboring sequences, if
@@ -186,7 +189,7 @@ disp(['You have ' num2str(length(fnb)) ' good pairs to look at on Side ' num2str
 % there is a need % we chose the white wave valley point as the picked
 % arrival
 close all
-pair_i = 1; % from 1 to length(Selectmap or fnb)
+pair_i = 2; % from 1 to length(Selectmap or fnb)
 disp(['We are looking at S' num2str(SRSidediff.SRmap(fnb(pair_i,1),1)) 'R' num2str(SRSidediff.SRmap(fnb(pair_i,1),2))]);
 SR_select = SourceReceiverPairs(myTransducers,myPlattens,SRSidediff.SRmap(fnb(pair_i,1),:),SRSidediff.wave_type(fnb(pair_i,1),:));
 
@@ -209,7 +212,7 @@ arrivaling = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, SR_selec
 
 %% pick the arrival based on the plot of all the sequences loaded
 close all
-arrivalingg = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, SR_select, pval, 'global',[],10,1,[]);
+arrivalingg = diffractions_picking(ActiveAcoustic,dataseq1, T, endnoise, SR_select, pval, 'global',[],10,1,1);
 
 %% check the arrival-picking results
 close all
