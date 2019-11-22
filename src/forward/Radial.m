@@ -15,8 +15,9 @@ classdef Radial
         r;
 
         % euler angles
-        Ealpha;
-        Ebeta;        
+        %Ealpha;% equals to 0, in the case of the radial shape
+        Ebeta;
+        Egamma;
         
     end
     
@@ -31,29 +32,39 @@ classdef Radial
     methods
         
         % constructor
-        function obj=Radial(r, XYZ_c,Ealpha,Ebeta)
+        function obj=Radial(r, XYZ_c,Ebeta,Egamma)
             
             obj.r=r;
             
             obj.xc=XYZ_c(1);
             obj.yc=XYZ_c(2);
             obj.zc=XYZ_c(3);
+            % obj.alpha=0; % this is always true
             
-            obj.Ealpha=Ealpha;
             obj.Ebeta=Ebeta;
+            obj.Egamma=Egamma;
             
         end
         
         % Rotation matrix
-        function EulerRot=get.EulerRot(obj)
+        function EulerRot=get.EulerRot(obj)      
             
-            EulerRot = [cos(obj.Ealpha),...
-               -cos(obj.Ebeta)*sin(obj.Ealpha),...
-                sin(obj.Ealpha)*sin(obj.Ebeta);...
-                sin(obj.Ealpha),...
-                cos(obj.Ealpha)*cos(obj.Ebeta),...
-                -cos(obj.Ealpha)*sin(obj.Ebeta);...
-                0, sin(obj.Ebeta), cos(obj.Ebeta)];
+            EulerRot = [cos(obj.Egamma),...
+                -sin(obj.Egamma),...
+                0;...
+                cos(obj.Ebeta)*sin(obj.Egamma),...
+                cos(obj.Ebeta)*cos(obj.Egamma),...
+                -sin(obj.Ebeta);...
+                sin(obj.Ebeta)*sin(obj.Egamma), cos(obj.Egamma)*sin(obj.Ebeta), cos(obj.Ebeta)];
+            
+            
+%             EulerRot = [cos(obj.Ealpha),...
+%                -cos(obj.Ebeta)*sin(obj.Ealpha),...
+%                 sin(obj.Ealpha)*sin(obj.Ebeta);...
+%                 sin(obj.Ealpha),...
+%                 cos(obj.Ealpha)*cos(obj.Ebeta),...
+%                 -cos(obj.Ealpha)*sin(obj.Ebeta);...
+%                 0, sin(obj.Ebeta), cos(obj.Ebeta)];
         end
         
         
