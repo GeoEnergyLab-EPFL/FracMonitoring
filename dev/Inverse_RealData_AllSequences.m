@@ -40,7 +40,7 @@ fjson = [datapath datafold num2str(starttime) '.json'];
 [jsonhdr,myTransducers,myPlattens,myBlock] = load_header(fjson);
 
 
-%% Inversion on all sequences
+%% Set experimental info
 
 % diffraction data
 % we read only the PP diffraction, one can change the wave_type by changing its value
@@ -65,29 +65,51 @@ Solid = gabbro;
 
 global prior
 
+%% M1_Ellipse 
 %   a b    x y z, theta, phi psi
-% guessed values vector a,b, center coordinate (XYZ), euler angle (alpha beta gamma)
-mp= [ .05;.05; .125;.125;.125; 0.;0.;0. ];
-sig_p = [.125;.125;0.02;0.02;0.005;pi/4;pi/40;pi/40]; % guessed variances
+% guessed values vector a,b, center coordinate (XYZ),
+% (alpha-local rotation; beta-tilt angle, most constrained; gamma-direction of the slope)
+mp= [ .05;.05; .125;.125;.1285; 0.;0.;0. ];
+sig_p = [.125;.125;0.02;0.02;0.006;pi/4;pi/60;pi/2]; % guessed variances
 
+%% M2_Radial
 % for the radial case r x y z alpha beta
-% mp= [ .05;.125;.125;.125; 0.;0.];
-% sig_p = [.125;0.02;0.02;0.005;pi/2;pi/40]; % guessed variances
+mp= [ .05;.125;0.125;.1285;0.;0.];
+sig_p = [.125;0.02;0.02;0.006;pi/60;pi/2]; % guessed variances
 
+%% M3_Ellipse with fixed z-coordinate for center
+% for the radial case r x y z alpha beta
+global z_c
+z_c=0.1285; % measured from the bottom
+mp= [ 0.05;0.05;.125;.125;0.; 0.;0.];
+sig_p = [.125;0.125;0.02;0.02;pi/4;pi/60;pi/2]; % guessed variances
+
+%% M4_Radial with fixed z-coordinate for center
+% for the radial case with fixed z_c coordiante
+global z_c
+z_c=0.1285; % measured from the bottom
+mp= [ .05;.125;.125;0.;0.];
+sig_p = [.125;0.02;0.02;pi/60;pi/2]; % guessed variances
+
+%% Set the prior
 prior = GaussianPrior(mp,sig_p);% build the object
 
-mevol=zeros(106-24,length(mp));% 22-114 %>=3traces:24-111 
-sig_evol=zeros(106-24,length(mp));
+%% Set the calculate sequence range
+seqrange=24:105;
+nseq=length(seqrange);
+
+%% Inverse problem for M1-M4
+mevol=zeros(nseq,length(mp));% 22-114 %>=3traces:24-111 
+sig_evol=zeros(nseq,length(mp));
 time={};
 SRPairs_all={};
-%seqnb =  90;%24
 wrong_pick={};
 i_w=0;
 ray_type_all={};
+prob_model=[];
 
-for i=1:82
-    
-    seqnb=23+i;
+for i=1:length(seqrange)
+    seqnb=seqrange(i);
     % Read the SRmap and arrival time
     [Pair_info, Pair_acqT]=load_diffraction(fpath, sidemarker, wave_type, seqnb);
     SRdiff = SourceReceiverPairs(myTransducers,myPlattens,Pair_info(:,1:2));
@@ -100,18 +122,20 @@ for i=1:82
     ray_type_all{i} = ray_type;
     
     % Check the S-R pairs
-    % build the SRPair object
-    % plot all the direct traces
 %     fig_b = plotblockwithplattens(myBlock,myPlattens)
 %     fig_handle = plotdirectrays(SRdiff,fig_b);
     
     %  direct unconstrained optimization (Nelder-Mead simplex)
     
     [m_opt,fval,exitflag,output] = fminsearch(@minusPosteriorPDF,mp);
-    % quadratic approximation of the posterior variaance
+    % quadratic approximation of the posterior variance
     [Cpost]=Posterior_Covariance_Matrix_ellipse(m_opt);
     sig_app_mpost=diag(Cpost).^0.5;
-    
+     
+    % calculate the Bayes factor
+    cp=det(diag(sig_p.^2));
+    prob_model(i)=exp(-fval)/(cp.^0.5).*det(diag(sig_app_mpost));
+   
     %%%%% check fit
     m = m_opt;
     %SRPairs_multiseq{i_seq} = SRPairs;
@@ -120,6 +144,10 @@ for i=1:82
             ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
         case 6
             ell = Radial(m(1),m(2:4),m(5),m(6));
+        case 7
+            ell = Ellipse(m(1),m(2),[m(3:4);z_c],m(5),m(6),m(7));
+        case 5
+            ell = Radial(m(1),[m(2:3);z_c],m(4),m(5));
         otherwise
             disp('Please check your input vector');
     end
@@ -143,8 +171,6 @@ for i=1:82
     figure
     errorbar([1:length(d)]',d*1e6,ones(length(d),1)*sig_d*1e6,'b')
     hold on
-    %plot(d*1e6); hold on; % the real arrival time
-    %errorbar([1:length(d)]',res(:,1)*1e6,ones(length(d),1)*sig_d*1e6,'b')
     plot([1:length(d)]',res(:,1)*1e6,'*-r'); % the optimized arrival time
     xlabel('Source-Receiver Pair Number') % here the label is not clear it is the diffracted SR pick
     ylabel('Arrival Time (\mu s)')
@@ -153,11 +179,94 @@ for i=1:82
     title(['Seq ' num2str(seqnb)])
     
     mevol(i,:)=m_opt';
-    sig_evol(i,:)=sig_app_mpost';
-    
+    sig_evol(i,:)=sig_app_mpost';   
 end
 
-%% 
+%% Save the results of inverse problems for M1
+m_1=mevol;
+sig_1=sig_evol;
+bayes_1=prob_model;
+wrongpick_1=wrong_pick;
+%% Save the results of inverse problems for M2
+m_2=mevol;
+sig_2=sig_evol;
+bayes_2=prob_model;
+wrongpick_2=wrong_pick;
+%% Save the results of inverse problems for M3
+m_3=mevol;
+sig_3=sig_evol;
+bayes_3=prob_model;
+wrongpick_3=wrong_pick;
+%% Save the results of inverse problems for M4
+m_4=mevol;
+sig_4=sig_evol;
+bayes_4=prob_model;
+wrongpick_4=wrong_pick;
+%% Bayes factor plot
+figure
+semilogy(bayes_1./bayes_4)
+hold on
+semilogy(bayes_2./bayes_4)
+hold on
+semilogy(bayes_3./bayes_4)
+legend('B_{14}','B_{24}','B_{34}')
+ylim([1e-5 1e200])
+
+%%
+figure
+semilogy(bayes_1./bayes_2)
+ylim([0 1000000])
+%% Save into text files and post-process in mathematica
+A1=[seqrange' m_1 sig_1 bayes_1'];% 1+8+8+1
+A2=[seqrange' m_2 sig_2 bayes_2'];% 1+6+6+1
+A3=[seqrange' m_3 sig_3 bayes_3'];% 1+7+7+1
+A4=[seqrange' m_4 sig_4 bayes_4'];% 1+5+5+1
+
+fileID = fopen(['msigbayespost1.txt'],'w');
+fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A1');
+fclose(fileID);
+
+fileID = fopen(['msigbayespost2.txt'],'w');
+fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A2');
+fclose(fileID);
+
+fileID = fopen(['msigbayespost3.txt'],'w');
+fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A3');
+fclose(fileID);
+
+fileID = fopen(['msigbayespost4.txt'],'w');
+fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %e\n',A4');
+fclose(fileID);
+
+%% Check the quadratic approximation around the minimum for one certain m_post
+% set the sequence number
+seqnb=40;
+
+% Read the SRmap and arrival time
+[Pair_info, Pair_acqT]=load_diffraction(fpath, sidemarker, wave_type, seqnb);
+SRdiff = SourceReceiverPairs(myTransducers,myPlattens,Pair_info(:,1:2));
+
+d = Pair_info(1:end,3)*1e-6; % arrival time data from diffraction should in s
+SRPairs = SRdiff; % SR pairs selected
+Cdinvdiag =(1/(1*sig_d^2))*ones(length(d),1); % data inverse of variance
+ray_type = ones(size(Pair_info,1),1);
+
+[m_opt,fval,exitflag,output] = fminsearch(@minusPosteriorPDF,mp);
+
+results=[];
+for i=1:length(m_opt)
+    for j=1:100
+        m_new=m_opt;
+        m_new(i)=m_opt(i)*(1+(j-50)*0.01); % from 0.5*m_opt to 1.5*m_opt
+        results(j)=minusPosteriorPDF(m_new);
+    end
+    figure
+    plot(m_opt(i)*(1+((1:100)'-50)./100),results')
+    xlabel(['m' num2str(i)])
+    ylabel('F*') % removed the constant terms
+end
+
+%% Save the output
 % write into the json file 
 txtoSave=jsonencode(DiffRecord);
 fname='DForT.json';
@@ -174,44 +283,51 @@ t_inj=datetime('14-Mar-2019 09:39:01');% 09:39:01
 % set the time for the first sequence
 t_first=(datenum(time{1})-datenum(t_inj))*d2s/60;
 
+%% fracture size evolution
+mevol=m_3;
+sig_evol=sig_3;
 figure
-errorbar([1:4:4*82],mevol(1:82,1),sig_evol(1:82,1))
-if (length(m)==8)
+errorbar([1:4:4*nseq],mevol(1:nseq,1),sig_evol(1:nseq,1))
+if (length(mp)==8)|| (length(mp)==7)
     hold on
-    errorbar([1:4:4*82],mevol(1:82,2),sig_evol(1:82,2),'r')
+    errorbar([1:4:4*nseq],mevol(1:nseq,2),sig_evol(1:nseq,2),'r')
     legend('a','b')
-    xlabel('Time (s)')
+    xlabel('Sequence number')
     ylabel('Elliptical radius (m)')
 else
     legend('r')
-    xlabel('Time (s)')
+    xlabel('Sequence number')
     ylabel('Radius (m)')
 end
-xticks(1:4*10:4*82)
-xticklabels(t_first+(0:10:82))
+xticks(1:4*10:4*nseq)
+xticklabels(seqrange(1:10:nseq))
 
+
+%% fracture center coordiante evolution
 figure
 plot_idx=1; % radial case
-if length(m)==8 % ellipse case
+if length(mp)==8 || length(mp)==7% ellipse case
     plot_idx=2;
 end
-errorbar([1:4:4*82],mevol(:,plot_idx+1),sig_evol(:,plot_idx+1))
+errorbar([1:4:4*nseq],mevol(:,plot_idx+1),sig_evol(:,plot_idx+1))
 hold on
-errorbar([1:4:4*82],mevol(:,plot_idx+2),sig_evol(:,plot_idx+2),'r')
+errorbar([1:4:4*nseq],mevol(:,plot_idx+2),sig_evol(:,plot_idx+2),'r')
 hold on
-errorbar([1:4:4*82],mevol(:,plot_idx+3),sig_evol(:,plot_idx+3),'k')
+if (length(mp)==8)|| (length(mp)==6)
+    errorbar([1:4:4*nseq],mevol(:,plot_idx+3),sig_evol(:,plot_idx+3),'k')
+end
 legend('xc','yc','zc')
-xticks(1:4*10:4*82)
-xticklabels(t_first+(0:10:82))
-xlabel('Time (s)')
+xticks(1:4*10:4*nseq)
+xticklabels(seqrange(1:10:nseq))
+xlabel('Sequence number')
 ylabel('Centeral coordinate (m)')
 
-%% output the data as a video
+%% output the data as a video for one chosen model
 % set the exception(errored) sequence
 exception=[];
 fig2 = figure('units','normalized','outerposition',[0 0 1 1])
 i_output = 0;
-for i = 1:82
+for i = 1:nseq
     m_i = mevol(i,:);
     [~,id]=ismember(i,exception);
     if id==0
@@ -219,36 +335,36 @@ for i = 1:82
             myBlock,myTransducers,myPlattens,fig2);
         i_output=i_output+1;
         hold on
-        title(['\fontsize{40}Seq ' num2str(i+24-1) ': ' datestr(time{i})])
+        title(['\fontsize{40}Seq ' num2str(seqrange(i)) ': ' datestr(time{i})])
         F(i_output)=getframe(fig2);
             %pause(2)
-        if i<82
+        if i<nseq
             clf;
         end
     end
 
 end
 
-% create the video writer with 1 fps
-  writerObj = VideoWriter('myVideo.avi');
-  writerObj.FrameRate = 10;
-  % set the seconds per image
-% open the video writer
-open(writerObj);
-% write the frames to the video
-for i=1:length(F)
-    % convert the image to a frame
-    frame = F(i) ;    
-    writeVideo(writerObj, frame);
-end
-% close the writer object
-close(writerObj);
+% % create the video writer with 1 fps
+%   writerObj = VideoWriter('myVideo.avi');
+%   writerObj.FrameRate = 10;
+%   % set the seconds per image
+% % open the video writer
+% open(writerObj);
+% % write the frames to the video
+% for i=1:length(F)
+%     % convert the image to a frame
+%     frame = F(i) ;    
+%     writeVideo(writerObj, frame);
+% end
+% % close the writer object
+% close(writerObj);
 
-%% analyse combined with the opening
+%% analyse combined with the opening for one chosen model
 % if considered as a radial fracture
 % calculate the equivalent fracture radius
 radius_eq=mevol(:,1);
-if length(m)==8
+if (length(m)==8)||(length(m)==7)
     radius_eq = sqrt(mevol(:,1).*mevol(:,2));
 end
 figure
@@ -307,9 +423,24 @@ for j=1:82
         width_picked = zeros(16,1);
     end
     
-    c_x = mevol(j,3);
-    c_y = mevol(j,4);
-    c_z = mevol(j,5);
+    switch size(mevol,2)
+        case 8
+            c_x = mevol(j,3);
+            c_y = mevol(j,4);
+            c_z = mevol(j,5);
+        case 7
+            c_x = mevol(j,3);
+            c_y = mevol(j,4);
+            c_z = z_c;
+        case 6
+            c_x = mevol(j,2);
+            c_y = mevol(j,3);
+            c_z = mevol(j,4);
+        case 5
+            c_x = mevol(j,2);
+            c_y = mevol(j,3);
+            c_z = z_c;
+    end
     w_eq = Kp/Ep*sqrt(radius_eq(j)).*sqrt(1-((1:100)/100).^2)*1e6;
 
     % N-S
@@ -382,9 +513,24 @@ for j=1:82
         width_picked = zeros(16,1);
     end
     
-    c_x = mevol(j,3);
-    c_y = mevol(j,4);
-    c_z = mevol(j,5);
+    switch size(mevol,2)
+        case 8
+            c_x = mevol(j,3);
+            c_y = mevol(j,4);
+            c_z = mevol(j,5);
+        case 7
+            c_x = mevol(j,3);
+            c_y = mevol(j,4);
+            c_z = z_c;
+        case 6
+            c_x = mevol(j,2);
+            c_y = mevol(j,3);
+            c_z = mevol(j,4);
+        case 5
+            c_x = mevol(j,2);
+            c_y = mevol(j,3);
+            c_z = z_c;
+    end
     ds = (radius_eq(j)- sqrt((trsn_y-c_y).^2+(trsn_x-c_x).^2))/ell_mk(id_j); % ksi_mk
 
     %plot
@@ -454,7 +600,7 @@ fig_handle = plotdirectrays(picked_pairs,fig_b);
 fig2 = figure('units','normalized','outerposition',[0 0 1 1])
 for i = 1:82
     m_i = mevol(i,:);
-    fractureShape_plot(m_i,Solid,SRPairs_all{i},...
+    fractureShape_plot(m_i,Solid,SRPairs_all{i},ray_type_all{i},...
         myBlock,myTransducers,myPlattens,fig2);
     hold on
     title(['\fontsize{40}Seq ' num2str(i+24-1) ': ' datestr(time{i})])
