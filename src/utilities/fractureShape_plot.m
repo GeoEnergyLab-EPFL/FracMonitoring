@@ -11,6 +11,7 @@ function [fig_handle] = fractureShape_plot(m,Solid,SRPairs,ray_type, myBlock,myT
 % the last three arguments can be easily adjusted when the format of the opening
 % changes
 
+global z_c;
 
 narg = length(varargin);
 if narg>=1
@@ -37,8 +38,14 @@ switch length(m)
     case 8 % Ellipse
         ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
         plotEllipse(ell,fig_handle,plotstyle);
+    case 7 % Ellipse with fixed z_c
+        ell = Ellipse(m(1),m(2),[m(3:4),z_c],m(5),m(6),m(7));
+        plotEllipse(ell,fig_handle,plotstyle);
     case 6
         ell = Radial(m(1),m(2:4),m(5),m(6));
+        plotRadial(ell,fig_handle,plotstyle);
+    case 5
+        ell = Radial(m(1),[m(2:3),z_c],m(4),m(5));
         plotRadial(ell,fig_handle,plotstyle);
     otherwise
         disp('Please check your input m-vector')
@@ -48,7 +55,6 @@ end
 % ray_type=ones(size(SRPairs.SRmap,1),1);
 res = diffractionForward(Solid,SRPairs,ell,ray_type);% give one the shortest time needed for diffraction
 plotdiffrays(SRPairs,res(:,2),res(:,3),res(:,4),fig_handle);% one should plot the trays with the corresponding diffracted points
-
 hold on
 plot3(res(:,2),res(:,3),res(:,4),'.g','MarkerSize',30);
 

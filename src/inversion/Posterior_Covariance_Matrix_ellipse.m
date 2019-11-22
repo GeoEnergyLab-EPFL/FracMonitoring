@@ -17,6 +17,8 @@ function [Ctilde]=Posterior_Covariance_Matrix_ellipse(mpost)
 
 global Solid SRPairs Cdinvdiag d prior ray_type;
 
+global z_c; % for the case of the fixed z-coordinate;
+
 
 inv_Cd=diag(Cdinvdiag);
 inv_Cp=diag(prior.invCpdiag);
@@ -38,19 +40,50 @@ for i=1:q
     m_minus(i)=mpost(i)*(1-h);
 
     m=m_plus;
-    if length(m)>6
-        shape=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
-    else
-        shape=Radial(m(1),m(2:4),m(5),m(6));
+    % case of flexible z_c coordiante
+%     if length(m)>6
+%         shape=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+%     else
+%         shape=Radial(m(1),m(2:4),m(5),m(6));
+%     end
+
+    % case of fixed z_c coordiante
+    switch length(m)
+        case 8
+            shape=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+        case 7
+            shape=Ellipse(m(1),m(2),[m(3:4); z_c],m(5),m(6),m(7));
+        case 6 
+            shape=Radial(m(1),m(2:4),m(5),m(6));
+        case 5
+            shape=Radial(m(1),[m(2:3); z_c] ,m(4),m(5));
+        otherwise
+            disp('Please check your input');
     end
+    
     res= diffractionForward(Solid,SRPairs,shape,ray_type);
     G_plus=res(:,1);
     m=m_minus;
-    if length(m)>6
-        shape=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
-    else
-        shape=Radial(m(1),m(2:4),m(5),m(6));
+    % case of flexible z-coordinate
+%     if length(m)>6
+%         shape=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+%     else
+%         shape=Radial(m(1),m(2:4),m(5),m(6));
+%     end
+    % case of fixed z-coordinate 
+    switch length(m)
+        case 8
+            shape=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+        case 7
+            shape=Ellipse(m(1),m(2),[m(3:4); z_c],m(5),m(6),m(7));
+        case 6 
+            shape=Radial(m(1),m(2:4),m(5),m(6));
+        case 5
+            shape=Radial(m(1),[m(2:3); z_c] ,m(4),m(5));
+        otherwise
+            disp('Please check your input');
     end
+    
     res= diffractionForward(Solid,SRPairs,shape,ray_type);
     G_minus=res(:,1);
     
