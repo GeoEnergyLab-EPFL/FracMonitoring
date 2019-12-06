@@ -11,6 +11,7 @@ function [fig_handle] = fractureShape_plot(m,Solid,SRPairs,ray_type, myBlock,myT
 % the last three arguments can be easily adjusted when the format of the opening
 % changes
 
+global m_ind;
 global z_c;
 
 narg = length(varargin);
@@ -33,24 +34,51 @@ if narg>=2 && ~isempty(varargin) && ~isempty(varargin{2})
 end
 
 plotblockwithplattens(myBlock,myPlattens,fig_handle);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% switch length(m)
+%     case 8 % Ellipse
+%         ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+%         plotEllipse(ell,fig_handle,plotstyle);
+%     case 7 % Ellipse with fixed z_c
+%         ell = Ellipse(m(1),m(2),[m(3:4),z_c],m(5),m(6),m(7));
+%         plotEllipse(ell,fig_handle,plotstyle);
+%     case 6
+%         ell = Radial(m(1),m(2:4),m(5),m(6));
+%         plotRadial(ell,fig_handle,plotstyle);
+%     case 5
+%         ell = Radial(m(1),[m(2:3),z_c],m(4),m(5));
+%         plotRadial(ell,fig_handle,plotstyle);
+%     otherwise
+%         disp('Please check your input m-vector')
+%         return;
+% end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-switch length(m)
-    case 8 % Ellipse
+switch m_ind
+    case 1 % Ellipse
         ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
         plotEllipse(ell,fig_handle,plotstyle);
-    case 7 % Ellipse with fixed z_c
+    case 2
+        ell = Radial(m(1),m(2:4),m(5),m(6));
+        plotRadial(ell,fig_handle,plotstyle);
+    case 3 % Ellipse
+        ell = Ellipse(m(1),m(2),m(3:5),m(6),0,0);
+        plotEllipse(ell,fig_handle,plotstyle);
+    case 4
+        ell = Radial(m(1),m(2:4),0,0);
+        plotRadial(ell,fig_handle,plotstyle);    
+    case 5 % Ellipse with fixed z_c
         ell = Ellipse(m(1),m(2),[m(3:4),z_c],m(5),m(6),m(7));
         plotEllipse(ell,fig_handle,plotstyle);
     case 6
-        ell = Radial(m(1),m(2:4),m(5),m(6));
-        plotRadial(ell,fig_handle,plotstyle);
-    case 5
         ell = Radial(m(1),[m(2:3),z_c],m(4),m(5));
         plotRadial(ell,fig_handle,plotstyle);
     otherwise
         disp('Please check your input m-vector')
         return;
 end
+
+
 % we set this by default for the PdP
 % ray_type=ones(size(SRPairs.SRmap,1),1);
 res = diffractionForward(Solid,SRPairs,ell,ray_type);% give one the shortest time needed for diffraction

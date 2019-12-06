@@ -14,11 +14,30 @@ fprintf('Note that the acceptance rate should be between ideally 0.2 and 0.44\n'
 fprintf(' - \n');
  
 
-strings_m={'a','b','x_c','y_c','z_c','phi','theta','psi'};
+
 col={'.r','.b','.m','.g','.y','.k','+r','+b'};
 
 ns=n_resampling;
 q=length(Xf(1,:)); % problem dimension
+global m_ind;
+
+switch q
+    case 8
+        strings_m={'a','b','x_1','x_2','x_3','\psi','\theta','\phi'};
+    case 7
+        strings_m={'a','b','x_1','x_2','\psi','\theta','\phi'};
+    case 6
+        if(m_ind==2)
+            strings_m={'r','x_1','x_2','x_3','\theta','\phi'};
+        else
+            strings_m={'a','b','x_1','x_2','x_3','\psi'};
+        end
+    case 5
+        strings_m={'r','x_1','x_2','\theta','\phi'};
+    case 4
+        strings_m={'r','x_1','x_2','x_3'};
+end
+
 
 if  k_o==length(Xf(:,1))  
     k_o=k_o-1000;
@@ -83,12 +102,13 @@ meanX=MPost(:,1);
 Ctilde=Ctilde_app(:,:,1);
 rho=rho_all(:,:,1);
 
-handler_histm=figure('Name',' Histogram of model parameters from MCMC' );
+handler_histm=figure('Name',' Histogram of model parameters from MCMC' ,'DefaultAxesFontSize',24);
+set(gcf,'Position',[100 100 900 600]); % set the figure size;
 
 % fit of Gaussian pdf to the mcmc results.
 
 for i=1:q
-    subplot(2,q/2,i);
+    subplot(2,q/2,i); % this is only suitable for the case of 8 and 6.
 
 %    x = linspace(min(Xsp(:,i)),max(Xsp(:,i)),100);
 %    norm2 = normpdf(x,meanX(i),Ctilde(i,i)^0.5);
@@ -96,11 +116,10 @@ for i=1:q
 %    plot(x,norm2,'r-');
 %    hold on; 
     
-    if q==8
-        title([' Hist of  ',strings_m{i}]); %, ' mu: ', num2str(mpost(i))
+    if q>=4 && q<=8
+            title([' Hist of  ',strings_m{i}]); %, ' mu: ', num2str(mpost(i))    
     else
-        
-        title([' Hist of m(',num2str(i),')']);
+            title([' Hist of m(',num2str(i),')']);
     end
     
 end
@@ -112,7 +131,11 @@ yc=sin(theta);
 myX=[xc yc];
 
  
-handler_cor=figure('Name',' Correlation Plot between model Parameters with confidence ellipses ' ); %(from MCMC(green), from Quad. approx(magenta))
+handler_cor=figure('Name',' Correlation Plot between model Parameters with confidence ellipses ' ,'DefaultAxesFontSize',24);
+set(gcf,'Position',[100 100 900 600]); % set the figure size;
+
+%(from MCMC(green), from Quad. approx(magenta))
+
 ng=(q-1);
 kj=0;
 % 
@@ -148,7 +171,7 @@ for i=1:q
         %
                  plot(aux(1,:)+meanX(i) ,aux(2,:)+meanX(j),'m','LineWidth',1.5); hold on;
         %
-        if q==8
+        if q>=4 && q<=8
             title([strings_m{i},'  vs  ',strings_m{j}]);
         else
             title(['m_',num2str(i),' vs m_',num2str(j)]);

@@ -19,6 +19,7 @@ function [mpost,sigpost]=MCMC_hist(accept,PX,X,k_o,stab,ns,varargin)
 %   sigpost :: corresponding variance
 
 q=length(X(1,:)); % problem dimension
+global m_ind;
 
 
 tmp_ndx = find(accept);
@@ -46,17 +47,35 @@ Xsp=X(k_s,:);
 
 
 % -LOG POST histogram
-handler_histpost=figure('Name','Histogram of - Log Posterior');
+handler_histpost=figure('Name','Histogram of - Log Posterior','DefaultAxesFontSize',24);
+set(gcf,'Position',[100 100 900 600]); % set the figure size;
+
 histfit(mLogP,60,'lognormal');  % it should look like a lognormal pdf
 title('Histogram of - Log Posterior');
 legend('It should look like a log Normal pdf' );
 
 
-strings_m={'a','b','x_c','y_c','z_c','phi','theta','psi'};
+switch q
+    case 8
+        strings_m={'a','b','x_1','x_2','x_3','\psi','\theta','\phi'};
+    case 7
+        strings_m={'a','b','x_1','x_2','\psi','\theta','\phi'};
+    case 6
+        if(m_ind==2)
+            strings_m={'r','x_1','x_2','x_3','\theta','\phi'};
+        else
+            strings_m={'a','b','x_1','x_2','x_3','\psi'};
+        end
+    case 5
+        strings_m={'r','x_1','x_2','\theta','\phi'};
+    case 4
+        strings_m={'r','x_1','x_2','x_3'};
+end
+
 col={'.r','.b','.m','.g','.y','.k','+r','+b'};
 
-handler_histm=figure('Name',' Histogram of model parameters from MCMC' );
-
+handler_histm=figure('Name',' Histogram of model parameters from MCMC','DefaultAxesFontSize',24);
+set(gcf,'Position',[100 100 900 600]) % set the figure size
 % fit of Gaussian pdf to the mcmc results.
 fitpostgaussian={};
 mpost=zeros(q,1); 
@@ -70,7 +89,7 @@ for i=1:q
 
     histfit(Xsp(:,i),60);hold on;
     
-    if q==8
+    if q<=8 && q>=4
         title([' Hist of  ',strings_m{i}]); %, ' mu: ', num2str(mpost(i))
     else
         

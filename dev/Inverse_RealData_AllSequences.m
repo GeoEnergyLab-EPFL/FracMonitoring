@@ -39,7 +39,6 @@ datafold = [num2str(datayear,'%02d') '-' num2str(datamonth,'%02d') '-' ...
 fjson = [datapath datafold num2str(starttime) '.json'];
 [jsonhdr,myTransducers,myPlattens,myBlock] = load_header(fjson);
 
-
 %% Set experimental info
 
 % diffraction data
@@ -50,8 +49,10 @@ fpath = [datapath datafold ];%'diffraction_picks/'];
 
 %
 % Set basic parameters for inverse problem
-gabbro = IsotropicSolid(3050,97.5867*1e9,0.3119); % vel in m/s
+% gabbro = IsotropicSolid(3050,97.5867*1e9,0.3119); % vel in m/s before
+% 28/11/2019
 % relation between E, density and Poisson's ratio
+gabbro = IsotropicSolid(3000,103.809*1e9,0.284314); % since 28/11/2019 
 
 % set the input parameters
 global d  SRPairs ray_type
@@ -65,27 +66,45 @@ Solid = gabbro;
 
 global prior
 
-%% M1_Ellipse 
+global m_ind % model indicator
+
+%% M1_Ellipse model indicator as 1
 %   a b    x y z, theta, phi psi
 % guessed values vector a,b, center coordinate (XYZ),
 % (alpha-local rotation; beta-tilt angle, most constrained; gamma-direction of the slope)
+m_ind=1;
 mp= [ .05;.05; .125;.125;.1285; 0.;0.;0. ];
 sig_p = [.125;.125;0.02;0.02;0.006;pi/4;pi/60;pi/2]; % guessed variances
 
-%% M2_Radial
+%% M2_Radial model indicator as 2
 % for the radial case r x y z alpha beta
+m_ind=2;
 mp= [ .05;.125;0.125;.1285;0.;0.];
 sig_p = [.125;0.02;0.02;0.006;pi/60;pi/2]; % guessed variances
 
-%% M3_Ellipse with fixed z-coordinate for center
+%% M3_Ellipse with zero dip model indicator as 3
+% for the radial case a b x y z self-rotation alpha
+m_ind=3;
+mp= [ .05;.05; .125;.125;.1285; 0.];
+sig_p = [.125;.125;0.02;0.02;0.006;pi/4]; % guessed variances
+
+%% M4_Radial with zero dip, model indicator as 4
+% for the radial case with fixed z_c coordiante
+m_ind=4;
+mp= [ .05;.125;0.125;.1285];
+sig_p = [.125;0.02;0.02;0.006]; % guessed variances
+
+%% M3bis_Ellipse with fixed z-coordinate for center model indicator as 5
 % for the radial case r x y z alpha beta
+m_ind=5;
 global z_c
 z_c=0.1285; % measured from the bottom
 mp= [ 0.05;0.05;.125;.125;0.; 0.;0.];
 sig_p = [.125;0.125;0.02;0.02;pi/4;pi/60;pi/2]; % guessed variances
 
-%% M4_Radial with fixed z-coordinate for center
+%% M4bis_Radial with fixed z-coordinate for center model indicator as 6
 % for the radial case with fixed z_c coordiante
+m_ind=6;
 global z_c
 z_c=0.1285; % measured from the bottom
 mp= [ .05;.125;.125;0.;0.];
@@ -95,7 +114,7 @@ sig_p = [.125;0.02;0.02;pi/60;pi/2]; % guessed variances
 prior = GaussianPrior(mp,sig_p);% build the object
 
 %% Set the calculate sequence range
-seqrange=24:105;
+seqrange=22:95;
 nseq=length(seqrange);
 
 %% Inverse problem for M1-M4
@@ -139,14 +158,18 @@ for i=1:length(seqrange)
     %%%%% check fit
     m = m_opt;
     %SRPairs_multiseq{i_seq} = SRPairs;
-    switch length(m)
-        case 8
+    switch m_ind
+        case 1
             ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
-        case 6
+        case 2
             ell = Radial(m(1),m(2:4),m(5),m(6));
-        case 7
-            ell = Ellipse(m(1),m(2),[m(3:4);z_c],m(5),m(6),m(7));
+        case 3
+            ell = Ellipse(m(1),m(2),m(3:5),m(6),0,0);
+        case 4
+            ell = Radial(m(1),m(2:4),0,0);
         case 5
+            ell = Ellipse(m(1),m(2),[m(3:4);z_c],m(5),m(6),m(7));
+        case 6
             ell = Radial(m(1),[m(2:3);z_c],m(4),m(5));
         otherwise
             disp('Please check your input vector');
@@ -162,11 +185,11 @@ for i=1:length(seqrange)
     end
 
 %     % save the results in a json file 
-%     DiffRecord(i).seqnb=seqnb;
+     DiffRecord(i).seqnb=seqnb;
 %     % acquisition time
-%     DiffRecord(i).acqT=time{i};
+     DiffRecord(i).acqT=time{i};
 %     % SR_map used
-%     DiffRecord(i).mDE=m;
+     DiffRecord(i).mDE=m;
  
     figure
     errorbar([1:length(d)]',d*1e6,ones(length(d),1)*sig_d*1e6,'b')
@@ -187,21 +210,29 @@ m_1=mevol;
 sig_1=sig_evol;
 bayes_1=prob_model;
 wrongpick_1=wrong_pick;
+SRPairs_all_1=SRPairs_all;
+ray_type_all_1=ray_type_all;
 %% Save the results of inverse problems for M2
 m_2=mevol;
 sig_2=sig_evol;
 bayes_2=prob_model;
 wrongpick_2=wrong_pick;
+SRPairs_all_2=SRPairs_all;
+ray_type_all_2=ray_type_all;
 %% Save the results of inverse problems for M3
 m_3=mevol;
 sig_3=sig_evol;
 bayes_3=prob_model;
 wrongpick_3=wrong_pick;
+SRPairs_all_3=SRPairs_all;
+ray_type_all_3=ray_type_all;
 %% Save the results of inverse problems for M4
 m_4=mevol;
 sig_4=sig_evol;
 bayes_4=prob_model;
 wrongpick_4=wrong_pick;
+SRPairs_all_4=SRPairs_all;
+ray_type_all_4=ray_type_all;
 %% Bayes factor plot
 figure
 semilogy(bayes_1./bayes_4)
@@ -210,11 +241,11 @@ semilogy(bayes_2./bayes_4)
 hold on
 semilogy(bayes_3./bayes_4)
 legend('B_{14}','B_{24}','B_{34}')
-ylim([1e-5 1e200])
+ylim([1e-5 1e10])
 
 %%
 figure
-semilogy(bayes_1./bayes_2)
+semilogy(bayes_2./bayes_4)
 ylim([0 1000000])
 %% Save into text files and post-process in mathematica
 A1=[seqrange' m_1 sig_1 bayes_1'];% 1+8+8+1
@@ -222,25 +253,25 @@ A2=[seqrange' m_2 sig_2 bayes_2'];% 1+6+6+1
 A3=[seqrange' m_3 sig_3 bayes_3'];% 1+7+7+1
 A4=[seqrange' m_4 sig_4 bayes_4'];% 1+5+5+1
 
-fileID = fopen(['msigbayespost1.txt'],'w');
+fileID = fopen(['G1.txt'],'w');
 fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A1');
 fclose(fileID);
 
-fileID = fopen(['msigbayespost2.txt'],'w');
+fileID = fopen(['G2.txt'],'w');
 fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A2');
 fclose(fileID);
 
-fileID = fopen(['msigbayespost3.txt'],'w');
+fileID = fopen(['G3.txt'],'w');
 fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A3');
 fclose(fileID);
 
-fileID = fopen(['msigbayespost4.txt'],'w');
+fileID = fopen(['G4.txt'],'w');
 fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %e\n',A4');
 fclose(fileID);
 
 %% Check the quadratic approximation around the minimum for one certain m_post
 % set the sequence number
-seqnb=40;
+seqnb=85;
 
 % Read the SRmap and arrival time
 [Pair_info, Pair_acqT]=load_diffraction(fpath, sidemarker, wave_type, seqnb);
@@ -269,7 +300,7 @@ end
 %% Save the output
 % write into the json file 
 txtoSave=jsonencode(DiffRecord);
-fname='DForT.json';
+fname='G01DForT.json';
 fid=fopen(fname,'w');
 fwrite(fid,txtoSave,'char');
 fclose(fid);
@@ -284,11 +315,11 @@ t_inj=datetime('14-Mar-2019 09:39:01');% 09:39:01
 t_first=(datenum(time{1})-datenum(t_inj))*d2s/60;
 
 %% fracture size evolution
-mevol=m_3;
-sig_evol=sig_3;
+mevol=m_4;
+sig_evol=sig_4;
 figure
 errorbar([1:4:4*nseq],mevol(1:nseq,1),sig_evol(1:nseq,1))
-if (length(mp)==8)|| (length(mp)==7)
+if (length(mp)==8)|| (length(mp)==7) || (m_ind==3)
     hold on
     errorbar([1:4:4*nseq],mevol(1:nseq,2),sig_evol(1:nseq,2),'r')
     legend('a','b')
@@ -303,17 +334,32 @@ xticks(1:4*10:4*nseq)
 xticklabels(seqrange(1:10:nseq))
 
 
+% plot the aspect ratio
+if (length(mp)==8)|| (length(mp)==7) || (m_ind==3)
+    figure
+    a_v=mevol(1:nseq,1);
+    b_v=mevol(1:nseq,2);
+    sig_a=sig_evol(1:nseq,1);
+    sig_b=sig_evol(1:nseq,2);
+    ratio=a_v./b_v;
+    sig_ratio=ratio.*sqrt((sig_a./a_v).^2+(sig_b./b_v).^2);
+    errorbar([1:4:4*nseq],ratio(1:nseq),sig_ratio(1:nseq),'r')
+    legend('M_1')
+    xlabel('Sequence number')
+    ylabel('Aspect Ratio')
+end
+
 %% fracture center coordiante evolution
 figure
 plot_idx=1; % radial case
-if length(mp)==8 || length(mp)==7% ellipse case
+if length(mp)==8 || length(mp)==7 || (m_ind==3)% ellipse case
     plot_idx=2;
 end
 errorbar([1:4:4*nseq],mevol(:,plot_idx+1),sig_evol(:,plot_idx+1))
 hold on
 errorbar([1:4:4*nseq],mevol(:,plot_idx+2),sig_evol(:,plot_idx+2),'r')
 hold on
-if (length(mp)==8)|| (length(mp)==6)
+if (m_ind<=4)
     errorbar([1:4:4*nseq],mevol(:,plot_idx+3),sig_evol(:,plot_idx+3),'k')
 end
 legend('xc','yc','zc')
@@ -322,7 +368,45 @@ xticklabels(seqrange(1:10:nseq))
 xlabel('Sequence number')
 ylabel('Centeral coordinate (m)')
 
-%% output the data as a video for one chosen model
+%% color styles
+clr1=[68 1 84]/255.;
+clr2=[49 104 142]/255.;
+clr3=[53 183 121]/255.;
+clr4=[253 231 37]/255.;
+
+%% output the data as the 2D fracture footprint
+m_evol=m_2;%m_1;
+SRPairs_all=SRPairs_all_2;%SRPairs_all_1;
+ray_type_all=ray_type_all_2;%ray_type_all_1;
+fig_handle = figure('DefaultAxesFontSize',24);
+set(gcf,'Position',[100 100 600 600]); % set the figure size;
+seqlist = [1:10:length(seqrange)];
+seqrange(seqlist)
+colorstyle=clr2;
+% 2D fracture plot function
+% input: sequence list, plot style
+fig_handle=fractureFootprint(m_evol,seqlist,SRPairs_all,ray_type_all, myBlock,fig_handle,colorstyle,'-');
+hold on
+m_evol=m_4;
+SRPairs_all=SRPairs_all_4;
+ray_type_all=ray_type_all_4;
+colorstyle=clr4;
+% 2D fracture plot function
+% input: sequence list, plot style
+fig_handle=fractureFootprint(m_evol,seqlist,SRPairs_all,ray_type_all, myBlock,fig_handle,colorstyle,'-');
+%% Timing for the selected sequences
+fbin = [datapath datafold num2str(starttime) '.bin'];
+AcqTime = load_timing(fbin); % in date hours min sec format .... can be transformed in sec format
+AcSeqT=AcqTime(seqrange);
+tt=datenum(AcSeqT)-datenum(AcSeqT(1));
+d2s=24*3600;
+tt(seqlist)*d2s
+
+%%
+fig_b=plotblockwithplattens(myBlock,myPlattens);
+fig_handle=plotdirectrays(SRdiff,fig_b);
+
+%% output the data as a 3D video for one chosen model
 % set the exception(errored) sequence
 exception=[];
 fig2 = figure('units','normalized','outerposition',[0 0 1 1])

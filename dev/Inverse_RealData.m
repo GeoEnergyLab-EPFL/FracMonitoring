@@ -43,7 +43,7 @@ fjson = [datapath datafold num2str(starttime) '.json'];
 %% Read the diffracted arrival
 % Set the sequence, wave_type, block side and its path%
 %i_seq = 4; % change this from 1 to seq_n
-seqnb =  60;
+seqnb =  85;
 % we read only the PP diffraction, one can change the wave_type by changing its value
 wave_type = 'PP';
 sidemarker = ['NV';'SV';'EV';'WV';'SS';'SE';'SW';'NN';'NE';'NW';'EE';'WW';'TT'];
@@ -60,8 +60,10 @@ fig_b = plotblockwithplattens(myBlock,myPlattens)
 fig_handle = plotdirectrays(SRdiff,fig_b);
 
 %% Set basic parameters for inverse problem
-gabbro = IsotropicSolid(3050,97.5867*1e9,0.3119); % vel in m/s
+% gabbro = IsotropicSolid(3050,97.5867*1e9,0.3119); % vel in m/s before 28/11/2019
 % relation between E, density and Poisson's ratio
+gabbro = IsotropicSolid(3000,103.809*1e9,0.284314); % since 28/11/2019 
+
 
 % set the input parameters
 global d  SRPairs ray_type
@@ -79,15 +81,53 @@ Cdinvdiag =(1/(1*sig_d^2))*ones(length(d),1); % data inverse of variance
 
 global prior
 
-%   a b    x y z, theta, phi psi 
-% guessed values vector a,b, center coordinate (XYZ), euler angle (alpha beta gamma)
-% mp= [ .05;.05; .125;.125;.125; 0.;0.;0. ]; 
-% sig_p = [.125;.125;0.02;0.02;0.005;pi/4;pi/40;pi/40]; % guessed variances
+global m_ind;
 
-% % radial case r x y z alpha beta
-mp= [.05; .125;.125;.125; 0.;0.]; 
-sig_p = [.125; 0.02;0.02;0.005;pi;pi/40]; % guessed variances
+%% M1_Ellipse model indicator as 1
+%   a b    x y z, theta, phi psi
+% guessed values vector a,b, center coordinate (XYZ),
+% (alpha-local rotation; beta-tilt angle, most constrained; gamma-direction of the slope)
+m_ind=1;
+mp= [ .05;.05; .125;.125;.1285; 0.;0.;0. ];
+sig_p = [.125;.125;0.02;0.02;0.006;pi/4;pi/60;pi/2]; % guessed variances
 
+%% M2_Radial model indicator as 2
+% for the radial case r x y z alpha beta
+m_ind=2;
+mp= [ .05;.125;0.125;.1285;0.;0.];
+sig_p = [.125;0.02;0.02;0.006;pi/60;pi/2]; % guessed variances
+
+%% M3_Ellipse model indicator as 3
+%   a b    x y z, theta, phi psi
+% guessed values vector a,b, center coordinate (XYZ),
+% (alpha-local rotation; beta-tilt angle, most constrained; gamma-direction of the slope)
+m_ind=3;
+mp= [ .05;.05; .125;.125;.1285; 0.];
+sig_p = [.125;.125;0.02;0.02;0.006;pi/4]; % guessed variances
+
+%% M2_Radial model indicator as 4
+% for the radial case r x y z alpha beta
+m_ind=4;
+mp= [ .05;.125;0.125;.1285];
+sig_p = [.125;0.02;0.02;0.006]; % guessed variances
+
+%% M3bis_Ellipse with fixed z-coordinate for center
+% for the radial case r x y z alpha beta
+m_ind=5;
+global z_c
+z_c=0.1285; % measured from the bottom
+mp= [ 0.05;0.05;.125;.125;0.; 0.;0.];
+sig_p = [.125;0.125;0.02;0.02;pi/4;pi/60;pi/2]; % guessed variances
+
+%% M4bis_Radial with fixed z-coordinate for center
+% for the radial case with fixed z_c coordiante
+m_ind=6;
+global z_c
+z_c=0.1285; % measured from the bottom
+mp= [ .05;.125;.125;0.;0.];
+sig_p = [.125;0.02;0.02;pi/60;pi/2]; % guessed variances
+
+%% Set the prior
 prior = GaussianPrior(mp,sig_p);% build the object
 
 %%  direct unconstrained optimization (Nelder-Mead simplex)
@@ -104,9 +144,21 @@ VTR = 0.1; % stop limit for the objective function, the value of the cost functi
 D = length(mp);% number of parameters of the objective function
            
 XVmin = 0.*mp'; % vector of lower bounds XVmin(1) ... XVmin(D)
-% XVmax = [.250;.250;.250;.250;.250;pi/2;pi/2;pi]'; % vector of upper bounds
-%XVmax(1) ... XVmax(D)% for the ellipse case
-XVmax = [.250;.250;.250;.250;pi/2;pi]'; % for the radial case
+switch m_ind
+    case 1
+        XVmax = [.250;.250;.250;.250;.250;pi;pi;pi/2]'; % vector of upper bounds
+    case 2
+        XVmax = [.250;.250;.250;.250;pi;pi]';
+    case 3
+        XVmax = [.250;.250;.250;.250;.250;pi]'; % vector of upper bounds
+    case 4
+        XVmax = [.250;.250;.250;.250]';    
+    case 5
+        XVmax = [.250;.250;.250;.250;pi;pi;pi/2]'; % vector of upper bounds
+    case 6
+        XVmax = [.250;.250;.250;pi;pi]';
+end
+
 NP = 10*D; % number of population members, 10D is by defaut
 itermax = 2000; % maximum number of iterations (generations)
 F = 0.8; % DE-stepsize F from interval [0, 2]
@@ -117,12 +169,19 @@ refresh = 10;
 
 %% compare the arrival time from the optmization and the measurement
 m = bestmem';
-if length(m)==8 % ellipse case
-    ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
-elseif length(m)==6 % radial case
-    ell = Radial(m(1),m(2:4),m(5),m(6));
-else
-    disp('Please check your input vector');
+switch m_ind
+    case 1 % ellipse case
+        ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+    case 2 % radial case
+        ell = Radial(m(1),m(2:4),m(5),m(6));
+    case 3 % ellipse case
+        ell = Ellipse(m(1),m(2),m(3:5),m(6),0,0);
+    case 4 % radial case
+        ell = Radial(m(1),m(2:4),0,0);
+    case 5
+        ell = Ellipse(m(1),m(2),[m(3:4),z_c],m(5),m(6),m(7));
+    case 6
+        ell = Radial(m(1),[m(2:3),z_c],m(4),m(5));
 end 
 res = diffractionForward(Solid,SRPairs,ell,ray_type);% give one the shortest time needed for diffraction
 figure
@@ -134,8 +193,6 @@ errorbar(res(:,1)*1e6,d*1e6,ones(length(d),1)*sig_d*1e6,'b')
 figure
 errorbar([1:length(d)]',d*1e6,ones(length(d),1)*sig_d*1e6,'b')
 hold on
-%plot(d*1e6); hold on; % the real arrival time
-%errorbar([1:length(d)]',res(:,1)*1e6,ones(length(d),1)*sig_d*1e6,'b')
 plot([1:length(d)]',res(:,1)*1e6,'*-r'); % the optimized arrival time
 xlabel('Different Source-Receiver Pairs') 
 ylabel('Arrival Time (\mu s)')
@@ -144,7 +201,7 @@ legend('real arrival time','calculated arrival time')
 
 %% plot the fracture ellipse with diffracted waves
 fig_handle = figure('units','normalized','outerposition',[0 0 1 1]);
-fig_handle = fractureShape_plot(m,Solid,SRPairs,myBlock,myTransducers,myPlattens,fig_handle)
+fig_handle = fractureShape_plot(m,Solid,SRPairs,ray_type,myBlock,myTransducers,myPlattens,fig_handle)
 hold on
 title(['\fontsize{40}Seq ' num2str(seqnb) ': ' datestr(AcSeqT)])
 
@@ -152,7 +209,7 @@ title(['\fontsize{40}Seq ' num2str(seqnb) ': ' datestr(AcSeqT)])
 
 mstart=m;
 Cstart=diag(1./prior.invCpdiag);
-Smax=20000*length(m);
+Smax=50000*length(m);
 fid_log = fopen('mcmc.txt','w');
 
 [accept, Xf, PXf, cf ,k_o, stab]=MarkovChainMonteCarlo(fid_log, mstart,Cstart,Smax,1,0,@minusPosteriorPDF);
@@ -173,6 +230,21 @@ n_resampling=1; % sub_sampling of the accepted chain
 n_res=2; % subsampling
 [MPost,Ctilde_all,W]=ProcessingMCMC(accept,PXf,Xf,k_o,stab,n_res,@minusPosteriorPDF);
 
+%% Comparison betweeen the models
+Nd=length(d);
+k_s=[k_o:n_res:length(PXf)];
+Xsp=Xf(k_s,:);
+n_sample_ellipse=length(Xsp(:,1));
+P_ellipse=(1/(1*sig_d))*exp(-minusLikelihoodEllipseDiff(MPost))*(1/2/pi)^(Nd/2);
+%%
+n_res=2; % subsampling
+k_s=[k_o:n_res:length(PXf)];
+Xsp=Xf(k_s,:);
+n_sample_radial=length(Xsp(:,1));
+[MPost_radial,Ctilde_all,W]=ProcessingMCMC(accept,PXf,Xf,k_o,stab,n_res,@minusPosteriorPDF);
+P_radial=(1/(1*sig_d))*exp(-minusLikelihoodEllipseDiff(MPost_radial))*(1/2/pi)^(Nd/2);
+BIC_radial=6*log(n_sample_radial)-2*log(P_radial);
+BIC_ellipse=8*log(n_sample_ellipse)-2*log(P_ellipse);
 %%
 % quadratic approximation of the posterior variance
 [Ctilde]=Posterior_Covariance_Matrix_ellipse(mpost);
