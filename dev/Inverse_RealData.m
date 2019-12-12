@@ -43,7 +43,7 @@ fjson = [datapath datafold num2str(starttime) '.json'];
 %% Read the diffracted arrival
 % Set the sequence, wave_type, block side and its path%
 %i_seq = 4; % change this from 1 to seq_n
-seqnb =  85;
+seqnb =  79;%85;%40;%79;
 % we read only the PP diffraction, one can change the wave_type by changing its value
 wave_type = 'PP';
 sidemarker = ['NV';'SV';'EV';'WV';'SS';'SE';'SW';'NN';'NE';'NW';'EE';'WW';'TT'];
@@ -209,7 +209,7 @@ title(['\fontsize{40}Seq ' num2str(seqnb) ': ' datestr(AcSeqT)])
 
 mstart=m;
 Cstart=diag(1./prior.invCpdiag);
-Smax=50000*length(m);
+Smax=40000*length(m);%40000 for Seq40 and Seq79
 fid_log = fopen('mcmc.txt','w');
 
 [accept, Xf, PXf, cf ,k_o, stab]=MarkovChainMonteCarlo(fid_log, mstart,Cstart,Smax,1,0,@minusPosteriorPDF);
@@ -230,35 +230,35 @@ n_resampling=1; % sub_sampling of the accepted chain
 n_res=2; % subsampling
 [MPost,Ctilde_all,W]=ProcessingMCMC(accept,PXf,Xf,k_o,stab,n_res,@minusPosteriorPDF);
 
-%% Comparison betweeen the models
-Nd=length(d);
-k_s=[k_o:n_res:length(PXf)];
-Xsp=Xf(k_s,:);
-n_sample_ellipse=length(Xsp(:,1));
-P_ellipse=(1/(1*sig_d))*exp(-minusLikelihoodEllipseDiff(MPost))*(1/2/pi)^(Nd/2);
+%% Calculate the Person's correlation coefficient
+fid=fopen('MCMCmSeq79M1.txt');
+m_all=fscanf(fid,'%f',[8 131863]);% the value 986 can be different here
+% [8 986] for Seq85
+% [8 19150] for Seq40
+% [8 131863] for Seq79
 %%
-n_res=2; % subsampling
-k_s=[k_o:n_res:length(PXf)];
-Xsp=Xf(k_s,:);
-n_sample_radial=length(Xsp(:,1));
-[MPost_radial,Ctilde_all,W]=ProcessingMCMC(accept,PXf,Xf,k_o,stab,n_res,@minusPosteriorPDF);
-P_radial=(1/(1*sig_d))*exp(-minusLikelihoodEllipseDiff(MPost_radial))*(1/2/pi)^(Nd/2);
-BIC_radial=6*log(n_sample_radial)-2*log(P_radial);
-BIC_ellipse=8*log(n_sample_ellipse)-2*log(P_ellipse);
+corr=corrcoef(m_all');
+R=corrplot(m_all');
+
 %%
-% quadratic approximation of the posterior variance
-[Ctilde]=Posterior_Covariance_Matrix_ellipse(mpost);
-sig_app=diag(Ctilde).^0.5;
-sig_app'
-sigpost'
+h=heatmap(abs(corr))
+colormap(viridis());
 
-% compare the best fit from the differential evolution
-[Ctilde]=Posterior_Covariance_Matrix_ellipse(bestmem');
-sig_app=diag(Ctilde).^0.5;
+%% plot the colormap for the correlation coefficients
+abscorr=abs(corr);
 
-sig_app'
-sigpost'
-sig_app_x'
+fig_handle = figure('DefaultAxesFontSize',24);
+set(gcf,'Position',[100 100 600 600]);
+figure(fig_handle)
+imagesc(1:size(abscorr,2),1:size(abscorr,1),abscorr)
+axis square
+caxis([0 1])
+colormap(viridis());
+colorbar
+set(gca,'xtick',[]);
+set(gca,'ytick',[]);
+
+
 %%
  
 m=mpost
