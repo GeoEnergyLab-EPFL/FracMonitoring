@@ -114,7 +114,7 @@ sig_p = [.125;0.02;0.02;pi/60;pi/2]; % guessed variances
 prior = GaussianPrior(mp,sig_p);% build the object
 
 %% Set the calculate sequence range
-seqrange=22:95;
+seqrange=22:89;
 nseq=length(seqrange);
 
 %% Inverse problem for M1-M4
@@ -190,6 +190,8 @@ for i=1:length(seqrange)
      DiffRecord(i).acqT=time{i};
 %     % SR_map used
      DiffRecord(i).mDE=m;
+     % Model indicator
+     DiffRecord(i).m_ind=m_ind;
  
     figure
     errorbar([1:length(d)]',d*1e6,ones(length(d),1)*sig_d*1e6,'b')
@@ -200,6 +202,19 @@ for i=1:length(seqrange)
     legend('real arrival time','calculated arrival time')
     hold on
     title(['Seq ' num2str(seqnb)])
+    
+    
+    % write the info of the arrival and estimated error
+%     if seqnb==50 % we choose the Seq.50
+%         datasave=[[1:length(d)]',d*1e6,ones(length(d),1)*sig_d*1e6,res(:,1)*1e6];
+%         fid = fopen('G01Seq50M2Matching.txt','wt');
+%         for ii = 1:size(datasave,1)% 
+%             fprintf(fid,'%g\t',datasave(ii,:));
+%             fprintf(fid,'\n');
+%         end
+%         fclose(fid);
+%     end
+    
     
     mevol(i,:)=m_opt';
     sig_evol(i,:)=sig_app_mpost';   
@@ -250,8 +265,8 @@ ylim([0 1000000])
 %% Save into text files and post-process in mathematica
 A1=[seqrange' m_1 sig_1 bayes_1'];% 1+8+8+1
 A2=[seqrange' m_2 sig_2 bayes_2'];% 1+6+6+1
-A3=[seqrange' m_3 sig_3 bayes_3'];% 1+7+7+1
-A4=[seqrange' m_4 sig_4 bayes_4'];% 1+5+5+1
+A3=[seqrange' m_3 sig_3 bayes_3'];% 1+6+6+1
+A4=[seqrange' m_4 sig_4 bayes_4'];% 1+4+4+1
 
 fileID = fopen(['G1.txt'],'w');
 fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A1');
@@ -262,11 +277,11 @@ fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A2');
 fclose(fileID);
 
 fileID = fopen(['G3.txt'],'w');
-fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A3');
+fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A3');
 fclose(fileID);
 
 fileID = fopen(['G4.txt'],'w');
-fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %e\n',A4');
+fprintf(fileID,'%d %f %f %f %f %f %f %f %f %e\n',A4');
 fclose(fileID);
 
 %% Check the quadratic approximation around the minimum for one certain m_post
@@ -315,8 +330,8 @@ t_inj=datetime('14-Mar-2019 09:39:01');% 09:39:01
 t_first=(datenum(time{1})-datenum(t_inj))*d2s/60;
 
 %% fracture size evolution
-mevol=m_4;
-sig_evol=sig_4;
+mevol=m_1;
+sig_evol=sig_1;
 figure
 errorbar([1:4:4*nseq],mevol(1:nseq,1),sig_evol(1:nseq,1))
 if (length(mp)==8)|| (length(mp)==7) || (m_ind==3)
@@ -370,27 +385,31 @@ ylabel('Centeral coordinate (m)')
 
 %% color styles
 clr1=[68 1 84]/255.;
-clr2=[49 104 142]/255.;
-clr3=[53 183 121]/255.;
-clr4=[253 231 37]/255.;
-
+clr2=[253 231 37]/255.;
+clr3=[92 201 99]/255.;
+clr4=[37 144 255]/255.;
+% clr2=[49 104 142]/255.;
+% clr3=[53 183 121]/255.;
 %% output the data as the 2D fracture footprint
-m_evol=m_2;%m_1;
-SRPairs_all=SRPairs_all_2;%SRPairs_all_1;
-ray_type_all=ray_type_all_2;%ray_type_all_1;
+m_ind=1;
+m_evol=m_1;%m_1;
+SRPairs_all=SRPairs_all_1;%SRPairs_all_1;
+ray_type_all=ray_type_all_1;%ray_type_all_1;
 fig_handle = figure('DefaultAxesFontSize',24);
 set(gcf,'Position',[100 100 600 600]); % set the figure size;
 seqlist = [1:10:length(seqrange)];
 seqrange(seqlist)
-colorstyle=clr2;
+colorstyle=clr1;
 % 2D fracture plot function
 % input: sequence list, plot style
 fig_handle=fractureFootprint(m_evol,seqlist,SRPairs_all,ray_type_all, myBlock,fig_handle,colorstyle,'-');
 hold on
-m_evol=m_4;
-SRPairs_all=SRPairs_all_4;
-ray_type_all=ray_type_all_4;
-colorstyle=clr4;
+
+m_ind=2;
+m_evol=m_2;
+SRPairs_all=SRPairs_all_2;
+ray_type_all=ray_type_all_2;
+colorstyle=clr2;
 % 2D fracture plot function
 % input: sequence list, plot style
 fig_handle=fractureFootprint(m_evol,seqlist,SRPairs_all,ray_type_all, myBlock,fig_handle,colorstyle,'-');
@@ -409,9 +428,11 @@ fig_handle=plotdirectrays(SRdiff,fig_b);
 %% output the data as a 3D video for one chosen model
 % set the exception(errored) sequence
 exception=[];
-fig2 = figure('units','normalized','outerposition',[0 0 1 1])
+%fig2 = figure('units','normalized','outerposition',[0 0 1 1])
+fig2 = figure('DefaultAxesFontSize',24);
+set(gcf,'Position',[100 100 600 600]); % set the figure size;
 i_output = 0;
-for i = 1:nseq
+for i = 29:29 %1:nseq
     m_i = mevol(i,:);
     [~,id]=ismember(i,exception);
     if id==0
@@ -422,9 +443,9 @@ for i = 1:nseq
         title(['\fontsize{40}Seq ' num2str(seqrange(i)) ': ' datestr(time{i})])
         F(i_output)=getframe(fig2);
             %pause(2)
-        if i<nseq
-            clf;
-        end
+%         if i<nseq
+%             clf;
+%         end
     end
 
 end

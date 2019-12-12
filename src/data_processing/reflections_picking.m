@@ -87,6 +87,9 @@ switch plotoption
             [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
         end
 
+        % using a high-pass filter here to remove the elasto-dynamic noise
+        dataSubswiggle=highpass(dataSubswiggle,0.6*1e6,Fs);
+        
         figure
         imagesc((1:size(allwiggle,1))',1e6*T(tinmin:tinmax)',(dataSubswiggle(1:end,1:end))',[min(min(dataSubswiggle)),max(max(dataSubswiggle))]);
         wiggle(1e6*T(tinmin:tinmax)',(1:size(allwiggle,1))',(dataSubswiggle(1:end,1:end))','+');
@@ -138,6 +141,9 @@ switch plotoption
             [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
         end
         
+        % using a high-pass filter here to remove the elasto-dynamic noise
+        dataSubswiggle=highpass(dataSubswiggle,0.6*1e6,Fs);
+        
         figure
         imagesc((xinmin:xinmax)',1e6*T(tinmin:tinmax)',(dataSubswiggle(1:end,1:end))',[min(min(dataSubswiggle)),max(max(dataSubswiggle))]);
         wiggle(1e6*T(tinmin:tinmax)',(xinmin:xinmax)',(dataSubswiggle(1:end,1:end))','+');
@@ -176,6 +182,9 @@ switch plotoption
         else
             [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
         end
+        
+        % using a high-pass filter here to remove the elasto-dynamic noise
+        dataSubswiggle=highpass(dataSubswiggle,0.6*1e6,Fs);
         
         fig=figure
         imagesc((1:size(allwiggle,1))',1e6*T(tinmin:tinmax)',(dataSubswiggle(1:end,1:end))',[min(min(dataSubswiggle)),max(max(dataSubswiggle))]);
