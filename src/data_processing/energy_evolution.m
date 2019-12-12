@@ -15,16 +15,19 @@ function [energy, SRmap]  = energy_evolution(dataseq1,endnoise,myTransducers,myP
 nargin = length(varargin);
 
 if ~isempty(varargin) && ~isempty(varargin{1}) && ~isempty(varargin{2})
-    [energy, SRmap] = evolution_single(dataseq1,endnoise,myTransducers,myPlattens,varargin{1},varargin{2},[],[],[],[]);
+    
     if nargin>=6 && ~isempty(varargin{4}) && ~isempty(varargin{5}) && ~isempty(varargin{6})
         [energy, SRmap] = evolution_single(dataseq1,endnoise,myTransducers,myPlattens,varargin{1},varargin{2},...
             varargin{3},varargin{4},varargin{5},varargin{6});
+    else
+        [energy, SRmap] = evolution_single(dataseq1,endnoise,myTransducers,myPlattens,varargin{1},varargin{2},[],[],[],[]);
     end
 else
-    [energy, SRmap] = evolution_transmit(dataseq1,endnoise,myTransducers,myPlattens,[],[],[],[]);
     if nargin>=6 && ~isempty(varargin{4}) && ~isempty(varargin{5}) && ~isempty(varargin{6})
         [energy, SRmap] = evolution_transmit(dataseq1,endnoise,myTransducers,myPlattens,...
             varargin{3},varargin{4},varargin{5},varargin{6});
+    else
+        [energy, SRmap] = evolution_transmit(dataseq1,endnoise,myTransducers,myPlattens,[],[],[],[]);
     end
 end
 
@@ -42,8 +45,17 @@ for p=1:length(myPlattens)
 end
 id_transducer=find(myTransducers.platten == myPlattens(id_p).id);
 transmitnumber=myTransducers.channel(id_transducer)+1;
+% set the wave mode for all transducer pairs
+for i_d=1:length(id_transducer)
+    if myTransducers.wave_mode(id_transducer(i_d))==1
+        mywave_mode(i_d,:)='SS';
+    else
+        mywave_mode(i_d,:)='PP';
+    end
+end
 % build the transducer Pairs and calculate the energy change
-transmitPairs=SourceReceiverPairs(myTransducers,myPlattens,[transmitnumber transmitnumber]);
+transmitPairs=SourceReceiverPairs(myTransducers,myPlattens,[transmitnumber transmitnumber],mywave_mode);% this line should consider the wave_type
+disp(transmitPairs.SRmap);
 energy_transmit  = energy_calculation(dataseq1,endnoise,transmitPairs,refseqnb,VArray,Fs,windowsize);
 SRmap = transmitPairs.SRmap;
 end
@@ -58,6 +70,9 @@ for p=1:length(myPlattens)
         oposide=myPlattens(p).face;
     end
 end
+disp(id_transducer);
+disp(oposide);
+
 switch oposide
     case 'N'
         sidemarker='S';
