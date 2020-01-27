@@ -24,7 +24,7 @@ nr = jsonhdr.ActiveAcousticInfos.NumberOfReceivers;
 % check date of recording, to know if data is int16 (after 2019-10 ) or
 % double (before)
 recdate = datetime(jsonhdr.TestInfos.Date_Time,'InputFormat','yyyy-MM-dd;HH:mm:ss');
-if recdate.Year>=2019&&recdate.Month>=10 
+if (recdate.Year>=2019&&recdate.Month>=10) || (recdate.Year>=2020) 
     databytes = 2; % then int16, 2 bytes
 else
     databytes = 8; % then double, 8 bytes
