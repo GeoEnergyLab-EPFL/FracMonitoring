@@ -126,12 +126,14 @@ wrong_pick={};
 i_w=0;
 ray_type_all={};
 prob_model=[];
+Pair_number=[];% number of pairs usded for each sequence
 
 for i=1:length(seqrange)
     seqnb=seqrange(i);
     % Read the SRmap and arrival time
     [Pair_info, Pair_acqT]=load_diffraction(fpath, sidemarker, wave_type, seqnb);
     SRdiff = SourceReceiverPairs(myTransducers,myPlattens,Pair_info(:,1:2));
+    Pair_number(i) = size(Pair_info,1);
     time{i}=Pair_acqT;
     SRPairs_all{i}= SRdiff;
     d = Pair_info(1:end,3)*1e-6; % arrival time data from diffraction should in s
@@ -219,6 +221,15 @@ for i=1:length(seqrange)
     mevol(i,:)=m_opt';
     sig_evol(i,:)=sig_app_mpost';   
 end
+
+%% Save the number of pairs used for each sequence
+figure
+plot(seqrange', Pair_number')
+
+B=[seqrange' Pair_number'];
+fileID = fopen(['GPair.txt'],'w');
+fprintf(fileID,'%d %d\n',B');
+fclose(fileID);
 
 %% Save the results of inverse problems for M1
 m_1=mevol;
