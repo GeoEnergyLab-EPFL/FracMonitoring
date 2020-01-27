@@ -259,3 +259,15 @@ Energy.SRmap=[(1:16)' (1:16)'];
 fig_test = figure('DefaultAxesFontSize',24);
 set(gcf,'Position',[100 100 600 600]); % set the figure size;
 [F,fig_test]=energy_plot(Energy,myBlock,myPlattens,myTransducers,DiffractionRecord,fig_test,'k',6)
+
+%% plot only the 2D diffraction curve
+sel_seq=58;
+Energy.seq=sel_seq;
+% for transmission P-wave signals
+Energy.energy=ones(length(sel_seq),16);
+Energy.SRmap=[(1:16)' (1:16)'];
+fig_test = figure('DefaultAxesFontSize',24);
+set(gcf,'Position',[100 100 600 600]); % set the figure size;
+[F,fig_test]=energy_plot(Energy,myBlock,myPlattens,myTransducers,DiffractionRecord,fig_test,'k',0.8)
+
+
