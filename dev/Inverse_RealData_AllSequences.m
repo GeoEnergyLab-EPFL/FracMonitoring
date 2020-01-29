@@ -75,12 +75,16 @@ global m_ind % model indicator
 m_ind=1;
 mp= [ .05;.05; .125;.125;.1285; 0.;0.;0. ];
 sig_p = [.125;.125;0.02;0.02;0.006;pi/4;pi/60;pi/2]; % guessed variances
+% relaxed tilt angle
+sig_p = [.125;.125;0.02;0.02;0.006;pi/4;pi/18;pi/2]; % guessed variances
 
 %% M2_Radial model indicator as 2
 % for the radial case r x y z alpha beta
 m_ind=2;
 mp= [ .05;.125;0.125;.1285;0.;0.];
 sig_p = [.125;0.02;0.02;0.006;pi/60;pi/2]; % guessed variances
+% relaxed tilt angle
+sig_p = [.125;0.02;0.02;0.006;pi/18;pi/2]; % guessed variances
 
 %% M3_Ellipse with zero dip model indicator as 3
 % for the radial case a b x y z self-rotation alpha
@@ -127,6 +131,7 @@ i_w=0;
 ray_type_all={};
 prob_model=[];
 Pair_number=[];% number of pairs usded for each sequence
+likeli_model=[];
 
 for i=1:length(seqrange)
     seqnb=seqrange(i);
@@ -151,11 +156,18 @@ for i=1:length(seqrange)
     [m_opt,fval,exitflag,output] = fminsearch(@minusPosteriorPDF,mp);
     % quadratic approximation of the posterior variance
     [Cpost]=Posterior_Covariance_Matrix_ellipse(m_opt);
-    sig_app_mpost=diag(Cpost).^0.5;
-     
+    sig_app_mpost=diag(Cpost).^0.5; % not sure about this.
+    
     % calculate the Bayes factor
     cp=det(diag(sig_p.^2));
-    prob_model(i)=exp(-fval)/(cp.^0.5).*det(diag(sig_app_mpost));
+    cd=det(diag(ones(1,length(d)).*(sig_d.^2)));
+    prob_model(i)=exp(-fval)/(cp.^0.5).*((det(Cpost)).^0.5);%/(cd.^0.5)/((2*pi).^(length(d)/2));
+    
+    % calculate the likelihood
+    mLikeli=minusLikelihoodEllipseDiff(m_opt);
+    %likeli_model(i)=exp(-mLikeli)/(cd.^0.5)/((2*pi).^(length(d)/2));
+    % better to use the log(likelihood) version
+    likeli_model(i)=-mLikeli-0.5*length(d)*log(sig_d^2)-length(d)/2*log(2*pi);
    
     %%%%% check fit
     m = m_opt;
@@ -219,7 +231,7 @@ for i=1:length(seqrange)
     
     
     mevol(i,:)=m_opt';
-    sig_evol(i,:)=sig_app_mpost';   
+    sig_evol(i,:)=sig_app_mpost';   % not sure if this is correct
 end
 
 %% Save the number of pairs used for each sequence
@@ -238,6 +250,7 @@ bayes_1=prob_model;
 wrongpick_1=wrong_pick;
 SRPairs_all_1=SRPairs_all;
 ray_type_all_1=ray_type_all;
+likelihood_1=likeli_model;
 %% Save the results of inverse problems for M2
 m_2=mevol;
 sig_2=sig_evol;
@@ -245,6 +258,7 @@ bayes_2=prob_model;
 wrongpick_2=wrong_pick;
 SRPairs_all_2=SRPairs_all;
 ray_type_all_2=ray_type_all;
+likelihood_2=likeli_model;
 %% Save the results of inverse problems for M3
 m_3=mevol;
 sig_3=sig_evol;
@@ -252,6 +266,7 @@ bayes_3=prob_model;
 wrongpick_3=wrong_pick;
 SRPairs_all_3=SRPairs_all;
 ray_type_all_3=ray_type_all;
+likelihood_3=likeli_model;
 %% Save the results of inverse problems for M4
 m_4=mevol;
 sig_4=sig_evol;
@@ -259,14 +274,15 @@ bayes_4=prob_model;
 wrongpick_4=wrong_pick;
 SRPairs_all_4=SRPairs_all;
 ray_type_all_4=ray_type_all;
+likelihood_4=likeli_model;
 %% Bayes factor plot
 figure
-semilogy(bayes_1./bayes_4)
+semilogy(bayes_2./bayes_1)
+hold on
+semilogy(bayes_2./bayes_3)
 hold on
 semilogy(bayes_2./bayes_4)
-hold on
-semilogy(bayes_3./bayes_4)
-legend('B_{14}','B_{24}','B_{34}')
+legend('B_{21}','B_{23}','B_{24}')
 ylim([1e-5 1e10])
 
 %%
@@ -274,25 +290,26 @@ figure
 semilogy(bayes_2./bayes_4)
 ylim([0 1000000])
 %% Save into text files and post-process in mathematica
-A1=[seqrange' m_1 sig_1 bayes_1'];% 1+8+8+1
-A2=[seqrange' m_2 sig_2 bayes_2'];% 1+6+6+1
-A3=[seqrange' m_3 sig_3 bayes_3'];% 1+6+6+1
-A4=[seqrange' m_4 sig_4 bayes_4'];% 1+4+4+1
-
+A1=[seqrange' m_1 sig_1 bayes_1' likelihood_1'];% 1+8+8+1+1
+A2=[seqrange' m_2 sig_2 bayes_2' likelihood_2'];% 1+6+6+1+1
+%%
+A3=[seqrange' m_3 sig_3 bayes_3' likelihood_3'];% 1+6+6+1+1
+A4=[seqrange' m_4 sig_4 bayes_4' likelihood_4'];% 1+4+4+1+1
+%%
 fileID = fopen(['G1.txt'],'w');
-fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A1');
+fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %e %f\n',A1');
 fclose(fileID);
 
 fileID = fopen(['G2.txt'],'w');
-fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A2');
+fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %e %f\n',A2');
 fclose(fileID);
-
+%%
 fileID = fopen(['G3.txt'],'w');
-fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %e\n',A3');
+fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %e %f\n',A3');
 fclose(fileID);
 
 fileID = fopen(['G4.txt'],'w');
-fprintf(fileID,'%d %f %f %f %f %f %f %f %f %e\n',A4');
+fprintf(fileID,'%d %f %f %f %f %f %f %f %f %e %f\n',A4');
 fclose(fileID);
 
 %% Check the quadratic approximation around the minimum for one certain m_post
