@@ -24,7 +24,8 @@ function [arrival_info]=diffractions_picking(activeInfo,dataseq1, T, endnoise, m
 % the plotting part
 % optional argument4: indicate whether to plot the neighboring difference
 % it is deactived by default
-%
+% optional argument 5: give the filtering range with respect to the
+% excitation frequency
 %% determine whether to plot the differences between neighboring sequences
 narg = length(varargin);
 neborplot=0; % the plot option is deactived by default.
@@ -38,9 +39,24 @@ np = activeInfo.NumberOfPoints;
 Fs = activeInfo.SamplingFrequency_MHz_*1E6;
 dt = 1/Fs;  % time step
 nseq = size(dataseq1,1);
+F_excitation= activeInfo.ExcitationFrequency_kHz_*1E3; % excitation frequency
+
+%% determine whether to apply a filter before the picking
+fil_range=[]; 
+n_fil=length(fil_range);
+if narg>=5 && ~isempty(varargin{5})
+    fil_range=varargin{5}.*F_excitation;
+    n_fil=length(fil_range);
+    if n_fil>=1
+        disp('A high-pass filter will be applied');
+        if n_fil==2
+            disp('A low-pass filter will be also applied');
+        end
+    end
+end
 
 %% set the range of the travel time desired to plot
-[fig1] = diffraction_image(dataseq1, T, endnoise, mySRPair,seqInitiate,neborplot,[endnoise*dt np*dt]*10^6);
+[fig1] = diffraction_image(dataseq1, T, endnoise, mySRPair,seqInitiate,neborplot,[endnoise*dt np*dt]*10^6,[],[],[Fs F_excitation],fil_range);
 
 disp('Click on the figure to get the travel time range')
 [~,trange] = ginput(2);
@@ -74,7 +90,7 @@ if narg>=2
 end
 
 %% Set the picked sequences range
-[fig2] = diffraction_image(dataseq1, T, endnoise, mySRPair,seqInitiate,neborplot,[min(trange) max(trange)],ref_info);
+[fig2] = diffraction_image(dataseq1, T, endnoise, mySRPair,seqInitiate,neborplot,[min(trange) max(trange)],ref_info,[],[Fs F_excitation],fil_range);
 disp('Click on the figure to get the range of the plotted sequence')
 [seqrange,~] = ginput(2);
 disp('Set already the range of sequence to pick')
@@ -86,6 +102,7 @@ close all;
 
 arrivalin = zeros(xinmax-xinmin+1,2);
 
+
 %% Plot and pick
 switch plotoption
     case 'global' % plot all the loaded sequences
@@ -96,6 +113,25 @@ switch plotoption
         else
             [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
         end
+        
+        % using a high-pass filter here to remove the elasto-dynamic noise
+        if n_fil>=1
+            dataSubswiggle=highpass(dataSubswiggle,fil_range(1),Fs);
+            if n_fil==2
+                dataSubswiggle=lowpass(dataSubswiggle,fil_range(2),Fs);
+            end
+        end
+        
+        dataSubswiggle=highpass(dataSubswiggle',0.001,1);
+        dataSubswiggle=dataSubswiggle';
+         
+        
+%         minv=min(dataSubswiggle(:,:));
+%         maxv=max(dataSubswiggle(:,:));
+%         %dataSubswiggle=abs(dataSubswiggle);
+%         v01=(dataSubswiggle-minv)./(maxv-minv);
+%         dataSubswiggle=-cos(v01.*pi/4);%v01.^(1/3);%-cos(v01.*pi/4);
+%         disp(size(dataSubswiggle));
 
         figure
         imagesc((1:size(allwiggle,1))',1e6*T(tinmin:tinmax)',(dataSubswiggle(1:end,1:end))',[min(min(dataSubswiggle)),max(max(dataSubswiggle))]);
@@ -136,6 +172,14 @@ switch plotoption
             end
         else
             [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
+        end
+        
+        % using a high-pass filter here to remove the elasto-dynamic noise
+        if n_fil>=1
+            dataSubswiggle=highpass(dataSubswiggle,fil_range(1),Fs);
+            if n_fil==2
+                dataSubswiggle=lowpass(dataSubswiggle,fil_range(2),Fs);
+            end
         end
         
         figure
@@ -193,6 +237,14 @@ switch plotoption
             else
                 [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
             end
+            
+            % using a high-pass filter here to remove the elasto-dynamic noise
+            if n_fil>=1
+                dataSubswiggle=highpass(dataSubswiggle,fil_range(1),Fs);
+                if n_fil==2
+                    dataSubswiggle=lowpass(dataSubswiggle,fil_range(2),Fs);
+                end
+            end
 
             fig_ini = in_i;
             figure(fig_ini)
@@ -230,14 +282,22 @@ switch plotoption
         
         allwiggle = squeeze(dataseq1(1:end,tinmin:tinmax,mySRPair.SRmap(1,1),mySRPair.SRmap(1,2)));
         if neborplot == 1
-            if xinmin==1
+            %if xinmin==1
                     dataSubswiggle = [zeros(1,size(allwiggle,2)); allwiggle(2:end,1:end)-allwiggle(1:end-1,1:end)];
-            else % in case of not the first local sequence, we compare the first seq with the one next to it
-                    firstseq = squeeze(dataseq1(xinmin-1,tinmin:tinmax,mySRPair.SRmap(1,1),mySRPair.SRmap(1,2)))-allwiggle(1,1:end);
-                    dataSubswiggle = [firstseq; allwiggle(2:end,1:end)-allwiggle(1:end-1,1:end)];
-            end
+            %else % in case of not the first local sequence, we compare the first seq with the one next to it
+                    %firstseq = squeeze(dataseq1(xinmin-1,tinmin:tinmax,mySRPair.SRmap(1,1),mySRPair.SRmap(1,2)))-allwiggle(1,1:end);
+                    %dataSubswiggle = [firstseq; allwiggle(2:end,1:end)-allwiggle(1:end-1,1:end)];
+            %end
         else
             [dataSubswiggle] = base_signal_substraction(allwiggle,basewiggle);
+        end
+        
+        % using a high-pass filter here to remove the elasto-dynamic noise
+        if n_fil>=1
+            dataSubswiggle=highpass(dataSubswiggle,fil_range(1),Fs);
+            if n_fil==2
+                dataSubswiggle=lowpass(dataSubswiggle,fil_range(2),Fs);
+            end
         end
         
         fig=figure
