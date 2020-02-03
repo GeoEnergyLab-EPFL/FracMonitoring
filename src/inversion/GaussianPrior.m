@@ -24,12 +24,13 @@ classdef GaussianPrior
 
         end
         
-        function [mPriorPdf]=minusLogPrior(obj,m)
+        function [mPriorPdf]=minusLogPrior(obj,z)
             %  -log Prior 
             % 
             % Gaussian prior
             %   
             %   
+            m=z(1:length(z)-1);
             
             mPriorPdf=0.5*((m-obj.mp)'*((m-obj.mp).*(obj.invCpdiag)));
             
