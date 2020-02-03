@@ -34,7 +34,7 @@ classdef Radial
         % constructor
         function obj=Radial(r, XYZ_c,Ebeta,Egamma)
             
-            obj.r=r;
+            obj.r=exp(r);% adaption for ln(r)
             
             obj.xc=XYZ_c(1);
             obj.yc=XYZ_c(2);

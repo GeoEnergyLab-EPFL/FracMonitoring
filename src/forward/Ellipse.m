@@ -36,8 +36,8 @@ classdef Ellipse
         function obj=Ellipse(a,b, XYZ_c,Ealpha,Ebeta,Egamma)
             
             %  if a>=b
-            obj.a=a;
-            obj.b=b;
+            obj.a=exp(a); % adaption for ln(a)
+            obj.b=exp(b); % adaption for ln(b)
             %             else
             %                 obj.a=b;
             %                 obj.b=a;
