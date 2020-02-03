@@ -1,4 +1,4 @@
-function [Ctilde]=Posterior_Covariance_Matrix_ellipse(mpost)
+function [Ctilde]=Posterior_Covariance_Matrix_ellipse(zpost)
 %
 % This function computes a quadratic approximation  of the covariance
 % matrix of the posterior pdf 
@@ -17,12 +17,13 @@ function [Ctilde]=Posterior_Covariance_Matrix_ellipse(mpost)
 
 global m_ind;
 
-global Solid SRPairs Cdinvdiag d prior ray_type;
+global Solid SRPairs d prior ray_type;
 
 global z_c; % for the case of the fixed z-coordinate;
 
+mpost=zpost(1:length(zpost)-1);
+noise=zpost(length(zpost));
 
-inv_Cd=diag(Cdinvdiag);
 inv_Cp=diag(prior.invCpdiag);
   
 %%%% FINITE DIFFERENCE APPROXIMATION OF JACOBIAN Matrices
@@ -130,9 +131,52 @@ for i=1:q
     
     X(:,i)=(G_plus-G_minus)/(2*h*mpost(i));
     
+    % calculate G using the mpost
+    m=mpost;
+    switch m_ind
+        case 1
+            shape=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+        case 2
+            shape=Radial(m(1),m(2:4),m(5),m(6));
+        case 3
+            shape=Ellipse(m(1),m(2),m(3:5),m(6),0,0);
+        case 4
+            shape=Radial(m(1),m(2:4),0,0);
+        case 5
+            shape=Ellipse(m(1),m(2),[m(3:4); z_c],m(5),m(6),m(7));
+        case 6
+            shape=Radial(m(1),[m(2:3); z_c] ,m(4),m(5));
+        otherwise 
+            disp('Please check your input');
+    end
+    
+    
+    res= diffractionForward(Solid,SRPairs,shape,ray_type);
+    G_mpost=res(:,1);
+
+    
+
+    
 end
 
-Ctilde_minus= X'*inv_Cd*X+inv_Cp;
+N_p=length(mpost);
+Ctilde_minus=ones(N_p+1);
+H_ij=(exp(-2*noise))*(X'*X)+inv_Cp;
+H_if=-2*exp(-2*noise)*(X'*(G_mpost-d));
+H_ff=2*exp(-2*noise)*((d-G_mpost)'*(d-G_mpost));
+for i=1:N_p+1
+    if(i<N_p+1)
+        for j=1:N_p
+            Ctilde_minus(i,j)=H_ij(i,j);
+        end
+    else
+        for j=1:N_p
+            Ctilde_minus(N_p+1,j)=H_if(j);
+            Ctilde_minus(j,N_p+1)=H_if(j);
+        end
+        Ctilde_minus(N_p+1,N_p+1)=H_ff;
+    end
+end
 
 Ctilde=pinv(Ctilde_minus);
 
