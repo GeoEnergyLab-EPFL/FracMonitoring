@@ -8,6 +8,7 @@ function energy_all  = energy_calculation(dataseq1,endnoise,SRPairs,varargin)
 % velocity [Vp Vs]
 % option3: the sampling frequency
 % option4: the window size you take
+% option5: the indicator if you do not read the data of all pairs
 % when calling this function, the four arguments are necessary, though
 % option1 and option 4 can be [].
 nargin = length(varargin);
@@ -63,7 +64,17 @@ flowpass = 2E6; % cut at 2 MHz
 [b, a] = butter(3,flowpass/Fn);
 
 for i_d=1:SRPairs.n_pairs
-    localseq = dataseq1(:,:,SRPairs.SRmap(i_d,1),SRPairs.SRmap(i_d,2));
+    if SRPairs.n_pairs>1 
+        if nargin>=5
+            if ~isempty(varargin) && ~isempty(varargin{5}) % in case you do not read the data of all 32 pairs
+                localseq = dataseq1(:,:,i_d,i_d);
+            end
+        else
+            localseq = dataseq1(:,:,SRPairs.SRmap(i_d,1),SRPairs.SRmap(i_d,2));
+        end
+    else
+        localseq = dataseq1(:,:);
+    end
     Twindow = [zeros(1,tlow(i_d)-npHanning) winHanning(1:npHanning) ones(1,tup(i_d)-tlow(i_d))...
     winHanning(npHanning+1:end) zeros(1,np-(tup(i_d)+npHanning))]';
     datasetWin = localseq.*Twindow';
