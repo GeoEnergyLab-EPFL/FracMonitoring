@@ -105,13 +105,14 @@ title('All transducer combinations')
 % longitudinal transducers
 figure
 hold on
-for i_pair = [1:23 25:28] %min([ns nr])
+for i_pair =19%[1:23 25:28] %min([ns nr])
     plot(T*1E6,squeeze(dataseq1(1,:,i_pair,i_pair)))
 end
 xlabel('Time (\mus)')
 ylabel('Amplitude (V)')
 title('Longitudinal transducer pairs')
-
+legend
+%%
 % shear transducers
 figure
 hold on

@@ -45,14 +45,23 @@ end
 mLogP=PX(k_s);
 Xsp=X(k_s,:);
 
+% save the Xsp into a txt file
+fid = fopen('mLogP.txt','wt');
+for ii = 1:size(Xsp,1)% 
+    fprintf(fid,'%g\t',Xsp(ii,:));
+    fprintf(fid,'\n');
+end
+fclose(fid);
+
+
 
 % -LOG POST histogram
 handler_histpost=figure('Name','Histogram of - Log Posterior','DefaultAxesFontSize',24);
 set(gcf,'Position',[100 100 900 600]); % set the figure size;
 
 histfit(mLogP,60,'lognormal');  % it should look like a lognormal pdf
-title('Histogram of - Log Posterior');
-legend('It should look like a log Normal pdf' );
+%title('Histogram of - Log Posterior');
+%legend('It should look like a log Normal pdf' );
 
 
 switch q

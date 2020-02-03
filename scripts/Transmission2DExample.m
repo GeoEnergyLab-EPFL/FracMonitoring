@@ -62,7 +62,7 @@ Fn = 0.5*Fs;    % Nyquist frequency (Hz)
 
 %%  read acoustic data from tge binary file 
 fbin = [datapath datafold num2str(starttime) '.bin'];
-seq_select=1:60;
+seq_select=1:90;
 [dataseq1, nq] = load_data(fbin,seq_select,1:32,1:32); 
 
 %% load timing data
@@ -87,7 +87,7 @@ endnoise = 300; % burning period for EM noise from the source excitation
 % detect all the transducers on the top and the bottom, regardless of the
 % srouce or receiver 
 for p=1:length(myPlattens)
-    if myPlattens(p).face=='E'
+    if myPlattens(p).face=='T'%'E'
         id_p=p;
     end
 end
@@ -154,7 +154,7 @@ end
 [energy_all,Pairsmap]=energy_evolution(dataseq1,endnoise,myTransducers,myPlattens,8,'S',11,[Vp,Vs],Fs,350); % single platten singles
 
 %% plot the energy evolution with time
-seq_select=1:60;
+seq_select=1:90;
 figure
 for i=1:size(energy_all,2)
     energy_ratio=energy_all(:,i);
@@ -162,13 +162,15 @@ for i=1:size(energy_all,2)
     set(gcf,'NumberTitle','off');
     set(gcf,'Name',['Transmission for S-R ' num2str(Pairsmap(i,:))]);
     if (i==19) || (i==20) || (i==9) || (i==10)
-    else
         plot(seq_select,energy_ratio')
+    else
+        %plot(seq_select,energy_ratio')
     end
     xlabel('Sequence number')
     ylabel('Energy ratio')
 end
-
+hold on 
+legend('9-SR30', '10-SR32','19-SR29','20-SR31')
 %% Read the diffraction data
 filename = 'G01DforT.json';
 DiffractionRecord = jsondecode(fileread(filename));

@@ -67,6 +67,9 @@ disp(['Length of the chain after resampling:',num2str(length(k_s))]);
 mLogP=PXf(k_s);
 Xsp=Xf(k_s,:);
 
+
+
+
 disp(['Fitting Gaussian multivariate pdfs mixture using BIC and EM_GM']);
 
 [MPost,Ctilde_all,W]=fitGaussiansMixture(Xsp,fpost);

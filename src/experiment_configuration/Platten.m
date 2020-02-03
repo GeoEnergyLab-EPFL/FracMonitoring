@@ -254,11 +254,13 @@ classdef Platten
                     return;
             end
             plot(xyz_loc(:,i),xyz_loc(:,j),'ok')
-            text(xyz_loc(:,i),xyz_loc(:,j),holetxt)
+            
+            %text(xyz_loc(:,i),xyz_loc(:,j),holetxt)
+            
             % add platten letter ID in top-left corner of outer platten
             % face (as is physically stamped)
-            letterIDpos = [0.24,0.24]';
-            text(letterIDpos(1),letterIDpos(2),obj.id)
+            %letterIDpos = [0.24,0.24]';
+            %text(letterIDpos(1),letterIDpos(2),obj.id)
         end
         
     end
