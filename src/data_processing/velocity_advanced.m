@@ -24,14 +24,14 @@ set(0,'DefaultTextFontWeight','bold')
 set(0,'DefaultLineColor','k')
 
 % ADDPATH
-addpath('../src/data_processing/');
-addpath('../src/data_load/');
-addpath('../src/utilities/');
-addpath('../src/properties/');
-addpath('../src/inversion/');
-addpath('../src/forward/');
-addpath('../src/experiment_configuration/');
-addpath('../src/data_processing/picking_methods/');
+% addpath('../src/data_processing/');
+% addpath('../src/data_load/');
+% addpath('../src/utilities/');
+% addpath('../src/properties/');
+% addpath('../src/inversion/');
+% addpath('../src/forward/');
+% addpath('../src/experiment_configuration/');
+% addpath('../src/data_processing/picking_methods/');
 
 
 % Time matrix for graphs
@@ -55,7 +55,7 @@ legend('PP','SS x10')
 set(gca,'box','on')
 
 disp('Click on the plot to go next:');
-[~]=ginput(1);
+%[~]=ginput(1);
 % close
        
  % figure % plot dataRef
