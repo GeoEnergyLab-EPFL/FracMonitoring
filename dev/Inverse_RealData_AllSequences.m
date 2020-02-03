@@ -61,7 +61,7 @@ sig_d = (0.5*1e-6);    % variance of measurement
 % this should be the variance of the picked arrival time, can change from case to case
 % we adopt here the average picked error 0.5\mu s
 
-global Solid  Cdinvdiag;
+global Solid;
 Solid = gabbro;
 
 global prior
@@ -73,18 +73,16 @@ global m_ind % model indicator
 % guessed values vector a,b, center coordinate (XYZ),
 % (alpha-local rotation; beta-tilt angle, most constrained; gamma-direction of the slope)
 m_ind=1;
-mp= [ .05;.05; .125;.125;.1285; 0.;0.;0. ];
-sig_p = [.125;.125;0.02;0.02;0.006;pi/4;pi/60;pi/2]; % guessed variances
+mp= [ log(0.05);log(0.05); .125;.125;.1285; 0.;0.;0. ];
+sig_p = [-log(0.125);-log(0.125);0.02;0.02;0.006;pi/4;pi/60;pi/2]; % guessed variances
 % relaxed tilt angle
-sig_p = [.125;.125;0.02;0.02;0.006;pi/4;pi/18;pi/2]; % guessed variances
+%sig_p = [.125;.125;0.02;0.02;0.006;pi/4;pi/18;pi/2]; % guessed variances
 
 %% M2_Radial model indicator as 2
 % for the radial case r x y z alpha beta
 m_ind=2;
-mp= [ .05;.125;0.125;.1285;0.;0.];
-sig_p = [.125;0.02;0.02;0.006;pi/60;pi/2]; % guessed variances
-% relaxed tilt angle
-sig_p = [.125;0.02;0.02;0.006;pi/18;pi/2]; % guessed variances
+mp= [ log(0.05);.125;0.125;.1285;0.;0.];
+sig_p = [-log(0.125);0.02;0.02;0.006;pi/18;pi/2]; % guessed variances
 
 %% M3_Ellipse with zero dip model indicator as 3
 % for the radial case a b x y z self-rotation alpha
@@ -122,8 +120,8 @@ seqrange=22:89;
 nseq=length(seqrange);
 
 %% Inverse problem for M1-M4
-mevol=zeros(nseq,length(mp));% 22-114 %>=3traces:24-111 
-sig_evol=zeros(nseq,length(mp));
+mevol=zeros(nseq,length(mp)+1);% 22-114 %>=3traces:24-111 
+sig_evol=zeros(nseq,length(mp)+1);
 time={};
 SRPairs_all={};
 wrong_pick={};
@@ -133,7 +131,7 @@ prob_model=[];
 Pair_number=[];% number of pairs usded for each sequence
 likeli_model=[];
 
-for i=1:length(seqrange)
+for i=1:nseq
     seqnb=seqrange(i);
     % Read the SRmap and arrival time
     [Pair_info, Pair_acqT]=load_diffraction(fpath, sidemarker, wave_type, seqnb);
@@ -153,24 +151,21 @@ for i=1:length(seqrange)
     
     %  direct unconstrained optimization (Nelder-Mead simplex)
     
-    [m_opt,fval,exitflag,output] = fminsearch(@minusPosteriorPDF,mp);
+    [z_opt,fval,exitflag,output] = fminsearch(@minusPosteriorPDF,[mp; log(sig_d)]);
     % quadratic approximation of the posterior variance
-    [Cpost]=Posterior_Covariance_Matrix_ellipse(m_opt);
+    [Cpost]=Posterior_Covariance_Matrix_ellipse(z_opt);
     sig_app_mpost=diag(Cpost).^0.5; % not sure about this.
     
     % calculate the Bayes factor
     cp=det(diag(sig_p.^2));
-    cd=det(diag(ones(1,length(d)).*(sig_d.^2)));
-    prob_model(i)=exp(-fval)/(cp.^0.5).*((det(Cpost)).^0.5);%/(cd.^0.5)/((2*pi).^(length(d)/2));
-    
-    % calculate the likelihood
-    mLikeli=minusLikelihoodEllipseDiff(m_opt);
-    %likeli_model(i)=exp(-mLikeli)/(cd.^0.5)/((2*pi).^(length(d)/2));
-    % better to use the log(likelihood) version
-    likeli_model(i)=-mLikeli-0.5*length(d)*log(sig_d^2)-length(d)/2*log(2*pi);
+    % log version
+    prob_model(i)=-fval-0.5*cp+0.5*det(Cpost);
+    % nonlog version
+    %prob_model(i)=exp(-fval)/(cp.^0.5).*((det(Cpost)).^0.5);%/((2*pi).^((length(d)-1)/2));
    
     %%%%% check fit
-    m = m_opt;
+    m = z_opt(1:length(z_opt)-1);
+    noise = z_opt(length(z_opt));
     %SRPairs_multiseq{i_seq} = SRPairs;
     switch m_ind
         case 1
@@ -206,9 +201,15 @@ for i=1:length(seqrange)
      DiffRecord(i).mDE=m;
      % Model indicator
      DiffRecord(i).m_ind=m_ind;
+     
+    % calculate the likelihood
+    mLikeli=minusLikelihoodEllipseDiff(z_opt);
+    % likeli_model(i)=exp(-mLikeli)/((exp(noise)).^0.5)/((2*pi).^(length(d)/2));
+    % better to use the log(likelihood) version
+    likeli_model(i)=-mLikeli-0.5*length(d)*log(exp(noise)^2)-length(d)/2*log(2*pi);
  
     figure
-    errorbar([1:length(d)]',d*1e6,ones(length(d),1)*sig_d*1e6,'b')
+    errorbar([1:length(d)]',d*1e6,ones(length(d),1)*exp(noise)*1e6,'b')
     hold on
     plot([1:length(d)]',res(:,1)*1e6,'*-r'); % the optimized arrival time
     xlabel('Source-Receiver Pair Number') % here the label is not clear it is the diffracted SR pick
@@ -230,8 +231,17 @@ for i=1:length(seqrange)
 %     end
     
     
-    mevol(i,:)=m_opt';
-    sig_evol(i,:)=sig_app_mpost';   % not sure if this is correct
+    mevol(i,:)=z_opt';
+    sig_evol(i,:)=sig_app_mpost';
+    
+    % calculate the correlation matrix
+    rho_matrix=ones(length(Cpost));
+    for i_rho=1:length(Cpost)
+        for j_rho=1:length(Cpost)
+            rho_matrix(i_rho,j_rho)=sqrt(Cpost(i_rho,j_rho).^2/Cpost(i_rho,i_rho)/Cpost(j_rho,j_rho));
+        end
+    end
+    % this is the correlation matrix containing log-parameters
 end
 
 %% Save the number of pairs used for each sequence
@@ -242,6 +252,11 @@ B=[seqrange' Pair_number'];
 fileID = fopen(['GPair.txt'],'w');
 fprintf(fileID,'%d %d\n',B');
 fclose(fileID);
+
+%% Adjust the data form
+% to write
+% save the real size, real estimated error and real Euler angles and
+% modelling noise and the real bayes factor for four models
 
 %% Save the results of inverse problems for M1
 m_1=mevol;
@@ -278,6 +293,7 @@ likelihood_4=likeli_model;
 %% Bayes factor plot
 figure
 semilogy(bayes_2./bayes_1)
+%%
 hold on
 semilogy(bayes_2./bayes_3)
 hold on
@@ -358,13 +374,30 @@ t_inj=datetime('14-Mar-2019 09:39:01');% 09:39:01
 t_first=(datenum(time{1})-datenum(t_inj))*d2s/60;
 
 %% fracture size evolution
-mevol=m_1;
-sig_evol=sig_1;
+mevol=m_2;
+sig_evol=sig_2;
+% what we get from the optimisation is acutually geometric mean and
+% standard deviation of a=ln(A)
+
+% we calculate the arithmetic mean and std of a .
+mevolnew=exp(mevol+0.5.*sig_evol.^2);
+sig_evolnew=exp(mevol+0.5.*sig_evol.^2).*sqrt(exp(sig_evol.^2)-1);
+
+% we calculate the geometric mean and std of a.
+mevolnew=exp(mevol);
+%sig_evolnew=(exp(mevol+sig_evol)-exp(mevol-sig_evol))/2;
+err_up = exp(mevol(1:nseq,1)+sig_evol(1:nseq,1))-mevolnew(1:nseq,1);
+err_low = mevolnew(1:nseq,1)-exp(mevol(1:nseq,1)-sig_evol(1:nseq,1));
+
+
 figure
-errorbar([1:4:4*nseq],mevol(1:nseq,1),sig_evol(1:nseq,1))
+% for one error bar
+%errorbar([1:4:4*nseq],mevolnew(1:nseq,1),sig_evolnew(1:nseq,1))
+% for two error bars: first lower error bar and then upper error bar
+errorbar([1:4:4*nseq],mevolnew(1:nseq,1),err_low,err_up)
 if (length(mp)==8)|| (length(mp)==7) || (m_ind==3)
     hold on
-    errorbar([1:4:4*nseq],mevol(1:nseq,2),sig_evol(1:nseq,2),'r')
+    errorbar([1:4:4*nseq],mevolnew(1:nseq,2),sig_evolnew(1:nseq,2),'r')
     legend('a','b')
     xlabel('Sequence number')
     ylabel('Elliptical radius (m)')
@@ -375,15 +408,16 @@ else
 end
 xticks(1:4*10:4*nseq)
 xticklabels(seqrange(1:10:nseq))
+%ylim([0 0.15])
 
 
 % plot the aspect ratio
 if (length(mp)==8)|| (length(mp)==7) || (m_ind==3)
     figure
-    a_v=mevol(1:nseq,1);
-    b_v=mevol(1:nseq,2);
-    sig_a=sig_evol(1:nseq,1);
-    sig_b=sig_evol(1:nseq,2);
+    a_v=mevolnew(1:nseq,1);
+    b_v=mevolnew(1:nseq,2);
+    sig_a=sig_evolnew(1:nseq,1);
+    sig_b=sig_evolnew(1:nseq,2);
     ratio=a_v./b_v;
     sig_ratio=ratio.*sqrt((sig_a./a_v).^2+(sig_b./b_v).^2);
     errorbar([1:4:4*nseq],ratio(1:nseq),sig_ratio(1:nseq),'r')
