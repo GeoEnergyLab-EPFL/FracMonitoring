@@ -50,13 +50,18 @@ fhigh = find(freq>=freqWindow(end),1);
 freqband = freq(flow:fhigh);
 
 % transmission coef
-hmax = 200; % max thickness excursion in microns
+hmax = 60; % max thickness excursion in microns % 500 for MARB
+% h = (-hmax:0.5:hmax)*1E-6; % vector of thicknesses
 h = (-hmax:0.5:hmax)*1E-6; % vector of thicknesses
+%h = (-0.01*hmax:0.5:hmax)*1E-6; % vector of thicknesses
 alpha = 2*pi*freqband*h/fluidProperties.Vp;  % freq * thickness
 Zr = fluidProperties.rho*fluidProperties.Vp/...
     (solidProperties.rho*solidProperties.Vp); % impedance contrast
 rff = (Zr-1)/(Zr+1); % reflection coefficient
 Trans = ((1-rff^2)*exp(-1i*alpha))./(1-rff^2*exp(-2*1i*alpha)); % transmission coefficient
+
+% thin-layer assumption
+% Trans = 2./(2+1i*alpha./Zr);
 
 % objective function
 Fun = zeros(nq,npairs,length(h));
@@ -77,6 +82,10 @@ end
 w = h(hmin);
 
 % test plot
-figure, plot(h,squeeze(Fun(1,1,:)))
+
+% for i_n=1:16
+%     figure
+%     plot(h,squeeze(Fun(40,i_n,:))) % for Local Seq.40
+% end
 
 end
