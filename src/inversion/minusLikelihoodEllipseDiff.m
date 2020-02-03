@@ -1,4 +1,4 @@
-function [mLikelihood]=minusLikelihoodEllipseDiff(m)
+function [mLikelihood]=minusLikelihoodEllipseDiff(z)
 
  % wrapper to the forward diffraction problem
  % Gaussian likelihood with uncorrelated measurement covariance
@@ -56,6 +56,8 @@ function [mLikelihood]=minusLikelihoodEllipseDiff(m)
 %         
 %     end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+    m=z(1:length(z)-1);
+    noise=z(length(z));
 
     switch m_ind
         case 1
@@ -83,6 +85,6 @@ function [mLikelihood]=minusLikelihoodEllipseDiff(m)
         disp('error in number of data / predictions');
     end
         
-    mLikelihood=0.5*((G-d)'*((G-d).*(Cdinvdiag)));
+    mLikelihood=0.5*((G-d)'*(G-d)).*exp(-2*noise);
     
 end
