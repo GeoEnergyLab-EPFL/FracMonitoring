@@ -167,7 +167,8 @@ for i=1:length(seqrange)
     mLikeli=minusLikelihoodEllipseDiff(m_opt);
     %likeli_model(i)=exp(-mLikeli)/(cd.^0.5)/((2*pi).^(length(d)/2));
     % better to use the log(likelihood) version
-    likeli_model(i)=-mLikeli-0.5*length(d)*log(sig_d^2)-length(d)/2*log(2*pi);
+    likeli_model(i)=-2*mLikeli/(length(d));%-0.5*length(d)*log(sig_d^2)-length(d)/2*log(2*pi);
+    
    
     %%%%% check fit
     m = m_opt;
@@ -206,6 +207,11 @@ for i=1:length(seqrange)
      DiffRecord(i).mDE=m;
      % Model indicator
      DiffRecord(i).m_ind=m_ind;
+     
+     
+    % here we try using the L-1 Norm for the likelihood
+    %likeli_model(i)=sum(abs(res(:,1)-d)/sig_d)/length(d); 
+     
  
     figure
     errorbar([1:length(d)]',d*1e6,ones(length(d),1)*sig_d*1e6,'b')
@@ -233,6 +239,11 @@ for i=1:length(seqrange)
     mevol(i,:)=m_opt';
     sig_evol(i,:)=sig_app_mpost';   % not sure if this is correct
 end
+
+%% Plot of the likelihood
+figure
+plot(-likeli_model)
+
 
 %% Save the number of pairs used for each sequence
 figure
