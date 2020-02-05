@@ -224,7 +224,7 @@ for i=58:58%1:nseq
     % calculate the Bayes factor
     cp=det(diag(sig_p.^2));
     % log version
-    prob_model(i)=-fval-0.5*cp+0.5*det(Cpost);
+    prob_model(i)=-fval-0.5*log(cp)+0.5*log(det(Cpost));
     % nonlog version
     %prob_model(i)=exp(-fval)/(cp.^0.5).*((det(Cpost)).^0.5);%/((2*pi).^((length(d)-1)/2));
    
