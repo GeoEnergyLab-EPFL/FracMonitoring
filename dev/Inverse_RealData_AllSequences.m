@@ -85,16 +85,16 @@ mp= [ log(0.05);.125;0.125;.1285;0.;0.];
 sig_p = [-log(0.125);0.02;0.02;0.006;pi/18;pi/2]; % guessed variances
 
 %% M3_Ellipse with zero dip model indicator as 3
-% for the radial case a b x y z self-rotation alpha
+% for the elliptical case a b x y z self-rotation alpha
 m_ind=3;
-mp= [ .05;.05; .125;.125;.1285; 0.];
-sig_p = [.125;.125;0.02;0.02;0.006;pi/4]; % guessed variances
+mp= [ log(0.05);log(0.05); .125;.125;.1285; 0.];
+sig_p = [-log(0.125);-log(0.125);0.02;0.02;0.006;pi/4]; % guessed variances
 
 %% M4_Radial with zero dip, model indicator as 4
 % for the radial case with fixed z_c coordiante
 m_ind=4;
-mp= [ .05;.125;0.125;.1285];
-sig_p = [.125;0.02;0.02;0.006]; % guessed variances
+mp= [ log(.05);.125;0.125;.1285];
+sig_p = [-log(.125);0.02;0.02;0.006]; % guessed variances
 
 %% M3bis_Ellipse with fixed z-coordinate for center model indicator as 5
 % for the radial case r x y z alpha beta
@@ -120,6 +120,27 @@ seqrange=22:89;
 nseq=length(seqrange);
 
 %% Inverse problem for M1-M4
+% set the method to use
+% value 0 indicates the quasi-Newton method
+% value 1 indicates the Differential evolution method
+switch m_ind
+    case 1
+% for M1
+        inverse_method=[zeros(42,1);ones(nseq-42,1)];
+% for M2
+    case 2
+        inverse_method=[zeros(49,1);ones(4,1);zeros(nseq-53,1)];
+% for M3
+    case 3
+        inverse_method=[zeros(26,1);ones(nseq-26,1)];
+    case 4
+% for M4
+        inverse_method=[zeros(57,1);1;zeros(nseq-58,1)];
+    otherwise
+        inverse_method=zeros(nseq,1);
+end
+
+%seq40 seq79
 mevol=zeros(nseq,length(mp)+1);% 22-114 %>=3traces:24-111 
 sig_evol=zeros(nseq,length(mp)+1);
 time={};
@@ -131,7 +152,7 @@ prob_model=[];
 Pair_number=[];% number of pairs usded for each sequence
 likeli_model=[];
 
-for i=1:nseq
+for i=58:58%1:nseq
     seqnb=seqrange(i);
     % Read the SRmap and arrival time
     [Pair_info, Pair_acqT]=load_diffraction(fpath, sidemarker, wave_type, seqnb);
@@ -149,9 +170,53 @@ for i=1:nseq
 %     fig_b = plotblockwithplattens(myBlock,myPlattens)
 %     fig_handle = plotdirectrays(SRdiff,fig_b);
     
-    %  direct unconstrained optimization (Nelder-Mead simplex)
     
-    [z_opt,fval,exitflag,output] = fminsearch(@minusPosteriorPDF,[mp; log(sig_d)]);
+
+    if inverse_method(i)==0
+        %  direct unconstrained optimization (Quasi-Newton algorithm)
+        %  set the MaxFunEvals
+        options = optimset('MaxFunEvals',1e5);
+        [z_opt,fval,exitflag,output] = fminsearch(@minusPosteriorPDF,[mp; log(sig_d)],options);
+    else
+        % differential evolution algorithm
+        VTR = -1e6; % stop limit for the objective function, the value of the cost function below which the optimization would be stopped
+        D = length(mp)+1;% number of parameters of the objective function
+           
+        % we don't give the intial input here, instead we set the minimum
+        % and maximum values
+        switch m_ind
+            case 1
+                XVmax = [log(.250);log(.250);.250;.250;.250;pi/2;pi;pi; log(20*sig_d)]'; % vector of upper bounds
+                XVmin = [log(0.01);log(0.01);0.;0.;0.;0;0.;0.;log(0.01*sig_d)]';
+            case 2
+                XVmax = [log(.250);.250;.250;.250;pi;pi; log(20*sig_d)]';
+                XVmin = [log(0.01);0.;0.;0.;0.;0.;log(0.01*sig_d)]';
+            case 3
+                XVmax = [log(.250);log(.250);.250;.250;.250;pi; log(20*sig_d)]'; % vector of upper bounds
+                XVmin = [log(0.01);log(0.01);0.;0.;0.;0.;log(0.01*sig_d)]';
+            case 4
+                XVmax = [log(.250);.250;.250;.250; log(20*sig_d)]';
+                XVmin = [log(0.01);0.;0.;0.;log(0.01*sig_d)]';
+            case 5
+                % needs to write
+                %XVmax = [log(.250);log(.250);.250;.250;pi;pi;pi/2; 10*sig_d]'; % vector of upper bounds
+                %XVmin = [-5.;-5.;0.;0.;0.;0.;0.;-100]';
+            case 6
+                % needs to write
+                %XVmax = [log(.250);.250;.250;pi;pi; 10*sig_d]';
+                %XVmin = [-5.;0.;0.;0.;0.;-100]';
+        end
+
+        NP = 10*D; % number of population members, 10D is by defaut
+        itermax = 2000; % maximum number of iterations (generations)
+        F = 0.8; % DE-stepsize F from interval [0, 2]
+        CR = 0.5; % crossover probability constant from interval [0, 1]
+        strategy = 7;
+        refresh = 10; 
+        [z_opt,fval,nfeval] = devec3(@minusPosteriorPDF,VTR,D,XVmin,XVmax,[],NP,itermax,F,CR,strategy,refresh);
+    end
+    
+    
     % quadratic approximation of the posterior variance
     [Cpost]=Posterior_Covariance_Matrix_ellipse(z_opt);
     sig_app_mpost=diag(Cpost).^0.5; % not sure about this.
@@ -204,7 +269,6 @@ for i=1:nseq
      
     % calculate the likelihood
     mLikeli=minusLikelihoodEllipseDiff(z_opt);
-    % likeli_model(i)=exp(-mLikeli)/((exp(noise)).^0.5)/((2*pi).^(length(d)/2));
     % better to use the log(likelihood) version
     likeli_model(i)=-mLikeli-0.5*length(d)*log(exp(noise)^2)-length(d)/2*log(2*pi);
  
@@ -244,6 +308,7 @@ for i=1:nseq
     % this is the correlation matrix containing log-parameters
 end
 
+
 %% Save the number of pairs used for each sequence
 figure
 plot(seqrange', Pair_number')
@@ -253,79 +318,196 @@ fileID = fopen(['GPair.txt'],'w');
 fprintf(fileID,'%d %d\n',B');
 fclose(fileID);
 
+%% Save the correlation matrix
+fileID = fopen(['G01Seq79Corr.txt'],'w');
+fprintf(fileID,'%d %d %d %d %d %d %d %d %d\n',rho_matrix);
+fclose(fileID);
+
+%% plot the correlation matrix
+fid = fopen('G01Seq79Corr.txt');
+corr_matrix = textscan(fid,'%f%f%f%f%f%f%f%f%f','HeaderLines',0,'CollectOutput',1);
+corr_matrix = corr_matrix{:};
+fid = fclose(fid);
+
+h=heatmap(abs(corr_matrix(1:8,1:8)))
+colormap(viridis());
+
+abscorr=abs(corr_matrix(1:8,1:8));
+
+fig_handle = figure('DefaultAxesFontSize',24);
+set(gcf,'Position',[100 100 600 600]);
+figure(fig_handle)
+imagesc(1:size(abscorr,2),1:size(abscorr,1),abscorr)
+axis square
+caxis([0 1])
+colormap(viridis());
+colorbar
+set(gca,'xtick',[]);
+set(gca,'ytick',[]);
+
 %% Adjust the data form
-% to write
 % save the real size, real estimated error and real Euler angles and
-% modelling noise and the real bayes factor for four models
+% modelling noise 
+fracture_size=[];
+off_set=[];
+tilt_angles=[];
+model_noise=[];
+err_size_up=[];
+err_size_low=[];
+err_offset=[];
+err_angles=[];
+aspect_ratio=[];
+err_ar_up=[];
+err_ar_low=[];
+    switch m_ind
+        case 1 % elliptical
+            fracture_size=exp(mevol(:,1:2)); % 2
+            off_set=mevol(:,3:5); % 3
+            tilt_angles=-1.*mevol(:,6:8); % 3
+            model_noise=exp(mevol(:,9)); % 1
+            
+            err_size_up=exp(mevol(:,1:2)+sig_evol(:,1:2))-exp(mevol(:,1:2)); %2
+            err_size_low=exp(mevol(:,1:2))-exp(mevol(:,1:2)-sig_evol(:,1:2)); %2
+            err_offset=sig_evol(:,3:5); %3
+            err_angles=sig_evol(:,6:8); %3
+            
+            aspect_ratio=exp(mevol(:,1)-mevol(:,2)); %1
+            err_ar_up=exp(mevol(:,1)-mevol(:,2)+sqrt(sig_evol(:,1).^2+sig_evol(:,2).^2))...
+                        -exp(mevol(:,1)-mevol(:,2)); %1
+            err_ar_low=exp(mevol(:,1)-mevol(:,2))-exp(mevol(:,1)-mevol(:,2)-sqrt(sig_evol(:,1).^2+sig_evol(:,2).^2)); %1
+                       
+        case 2 % radial
+            fracture_size=exp(mevol(:,1)); % 1
+            off_set=mevol(:,2:4); % 3
+            tilt_angles=-1.*mevol(:,5:6); % 2
+            model_noise=exp(mevol(:,7)); % 1
+            err_size_up=exp(mevol(:,1)+sig_evol(:,1))-exp(mevol(:,1)); %1
+            err_size_low=exp(mevol(:,1))-exp(mevol(:,1)-sig_evol(:,1)); %1
+            err_offset=sig_evol(:,2:4); %3
+            err_angles=sig_evol(:,5:6); %2
+        case 3 % elliptical
+            fracture_size=exp(mevol(:,1:2)); % 2
+            off_set=mevol(:,3:5); % 3
+            tilt_angles=-1.*mevol(:,6); % 1
+            model_noise=exp(mevol(:,7)); % 1
+            err_size_up=exp(mevol(:,1:2)+sig_evol(:,1:2))-exp(mevol(:,1:2)); %2
+            err_size_low=exp(mevol(:,1:2))-exp(mevol(:,1:2)-sig_evol(:,1:2)); %2
+            err_offset=sig_evol(:,3:5); %3
+            err_angles=sig_evol(:,6); % 1
+            
+            aspect_ratio=exp(mevol(:,1)-mevol(:,2)); %1
+            err_ar_up=exp(mevol(:,1)-mevol(:,2)+sqrt(sig_evol(:,1).^2+sig_evol(:,2).^2))...
+                        -exp(mevol(:,1)-mevol(:,2)); %1
+            err_ar_low=exp(mevol(:,1)-mevol(:,2))-exp(mevol(:,1)-mevol(:,2)-sqrt(sig_evol(:,1).^2+sig_evol(:,2).^2)); %1
+        case 4 % radial
+            fracture_size=exp(mevol(:,1)); % 1
+            off_set=mevol(:,2:4); % 3
+            model_noise=exp(mevol(:,5)); % 1
+            err_size_up=exp(mevol(:,1)+sig_evol(:,1))-exp(mevol(:,1)); %1
+            err_size_low=exp(mevol(:,1))-exp(mevol(:,1)-sig_evol(:,1)); %1
+            err_offset=sig_evol(:,2:4); %3
+        case 5 % elliptical
+            % needs to code
+        case 6 % radial
+            % needs to code
+        otherwise
+            disp('Please check your input vector');
+    end
 
 %% Save the results of inverse problems for M1
-m_1=mevol;
-sig_1=sig_evol;
-bayes_1=prob_model;
-wrongpick_1=wrong_pick;
+m_1=[fracture_size off_set tilt_angles model_noise aspect_ratio]; % 2+3+3+1+1
+sig_1=[err_size_up err_size_low err_offset err_angles err_ar_up err_ar_low]; % 2+2+3+3+1+1
+bayes_1=prob_model; % 1
+wrongpick_1=wrong_pick; 
 SRPairs_all_1=SRPairs_all;
 ray_type_all_1=ray_type_all;
 likelihood_1=likeli_model;
 %% Save the results of inverse problems for M2
-m_2=mevol;
-sig_2=sig_evol;
+m_2=[fracture_size off_set tilt_angles model_noise aspect_ratio]; % 1+3+2+1
+sig_2=[err_size_up err_size_low err_offset err_angles err_ar_up err_ar_low]; % 1+1+3+2
 bayes_2=prob_model;
 wrongpick_2=wrong_pick;
 SRPairs_all_2=SRPairs_all;
 ray_type_all_2=ray_type_all;
 likelihood_2=likeli_model;
 %% Save the results of inverse problems for M3
-m_3=mevol;
-sig_3=sig_evol;
+m_3=[fracture_size off_set tilt_angles model_noise aspect_ratio]; % 2+3+1+1+1
+sig_3=[err_size_up err_size_low err_offset err_angles err_ar_up err_ar_low]; % 2+2+3+1+1+1
 bayes_3=prob_model;
 wrongpick_3=wrong_pick;
 SRPairs_all_3=SRPairs_all;
 ray_type_all_3=ray_type_all;
 likelihood_3=likeli_model;
 %% Save the results of inverse problems for M4
-m_4=mevol;
-sig_4=sig_evol;
+m_4=[fracture_size off_set tilt_angles model_noise aspect_ratio]; % 1+3+1
+sig_4=[err_size_up err_size_low err_offset err_angles err_ar_up err_ar_low]; % 1+1+3
 bayes_4=prob_model;
 wrongpick_4=wrong_pick;
 SRPairs_all_4=SRPairs_all;
 ray_type_all_4=ray_type_all;
 likelihood_4=likeli_model;
-%% Bayes factor plot
-figure
-semilogy(bayes_2./bayes_1)
-%%
-hold on
-semilogy(bayes_2./bayes_3)
-hold on
-semilogy(bayes_2./bayes_4)
-legend('B_{21}','B_{23}','B_{24}')
-ylim([1e-5 1e10])
 
-%%
+
+%% likelihood plot and modelling noise plot
 figure
-semilogy(bayes_2./bayes_4)
-ylim([0 1000000])
+plot(likelihood_1)
+hold on
+plot(likelihood_2)
+hold on
+plot(likelihood_3)
+hold on
+plot(likelihood_4)
+legend('M1','M2','M3','M4')
+
+figure
+plot(m_1(:,9))
+hold on
+plot(m_2(:,7))
+hold on
+plot(m_3(:,7))
+hold on
+plot(m_4(:,5))
+legend('M1','M2','M3','M4')
+
 %% Save into text files and post-process in mathematica
-A1=[seqrange' m_1 sig_1 bayes_1' likelihood_1'];% 1+8+8+1+1
-A2=[seqrange' m_2 sig_2 bayes_2' likelihood_2'];% 1+6+6+1+1
+A1=[seqrange' m_1 sig_1 bayes_1' likelihood_1'];% 1+10+12+1+1
 %%
-A3=[seqrange' m_3 sig_3 bayes_3' likelihood_3'];% 1+6+6+1+1
-A4=[seqrange' m_4 sig_4 bayes_4' likelihood_4'];% 1+4+4+1+1
+A2=[seqrange' m_2 sig_2 bayes_2' likelihood_2'];% 1+7+7+1+1
+%%
+A3=[seqrange' m_3 sig_3 bayes_3' likelihood_3'];% 1+8+10+1+1
+%%
+A4=[seqrange' m_4 sig_4 bayes_4' likelihood_4'];% 1+5+5+1+1
 %%
 fileID = fopen(['G1.txt'],'w');
-fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %e %f\n',A1');
+fprintf(fileID,'%d %f %f %f %f %f %f %f %f %e %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',A1');
 fclose(fileID);
-
+%%
 fileID = fopen(['G2.txt'],'w');
-fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %e %f\n',A2');
+fprintf(fileID,'%d %f %f %f %f %f %f %e %f %f %f %f %f %f %f %f %f\n',A2');
 fclose(fileID);
 %%
 fileID = fopen(['G3.txt'],'w');
-fprintf(fileID,'%d %f %f %f %f %f %f %f %f %f %f %f %f %e %f\n',A3');
+fprintf(fileID,'%d %f %f %f %f %f %f %e %f %f %f %f %f %f %f %f %f %f %f %f %f\n',A3');
+fclose(fileID);
+%%
+fileID = fopen(['G4.txt'],'w');
+fprintf(fileID,'%d %f %f %f %f %e %f %f %f %f %f %f %f\n',A4');
 fclose(fileID);
 
-fileID = fopen(['G4.txt'],'w');
-fprintf(fileID,'%d %f %f %f %f %f %f %f %f %e %f\n',A4');
+%% Bayes factor plot
+figure
+semilogy(exp(bayes_2-bayes_1))
+hold on
+semilogy(exp(bayes_2-bayes_3))
+hold on
+semilogy(exp(bayes_2-bayes_4))
+legend('B_{21}','B_{23}','B_{24}')
+
+%% save the bayes factor
+ABayes=[seqrange' (exp(bayes_2-bayes_1))' (exp(bayes_2-bayes_3))' (exp(bayes_2-bayes_4))' ];% 1+1+1+1
+
+fileID = fopen(['GBayes.txt'],'w');
+fprintf(fileID,'%d %e %e %e\n',ABayes');
 fclose(fileID);
 
 %% Check the quadratic approximation around the minimum for one certain m_post
@@ -363,7 +545,10 @@ fname='G01DForT.json';
 fid=fopen(fname,'w');
 fwrite(fid,txtoSave,'char');
 fclose(fid);
-
+% this is for transmission plot, saved sequence by sequence, different from
+% that for FootPrint
+% can be deduced from the FootPrint json file, needs to correct energy_plot
+% function.
 
 %% plot the evolution of the ellipse parameters
 % set the estimated fracture initiation data
@@ -374,14 +559,13 @@ t_inj=datetime('14-Mar-2019 09:39:01');% 09:39:01
 t_first=(datenum(time{1})-datenum(t_inj))*d2s/60;
 
 %% fracture size evolution
-mevol=m_2;
-sig_evol=sig_2;
+
 % what we get from the optimisation is acutually geometric mean and
 % standard deviation of a=ln(A)
 
 % we calculate the arithmetic mean and std of a .
-mevolnew=exp(mevol+0.5.*sig_evol.^2);
-sig_evolnew=exp(mevol+0.5.*sig_evol.^2).*sqrt(exp(sig_evol.^2)-1);
+% mevolnew=exp(mevol+0.5.*sig_evol.^2);
+% sig_evolnew=exp(mevol+0.5.*sig_evol.^2).*sqrt(exp(sig_evol.^2)-1);
 
 % we calculate the geometric mean and std of a.
 mevolnew=exp(mevol);
@@ -397,7 +581,7 @@ figure
 errorbar([1:4:4*nseq],mevolnew(1:nseq,1),err_low,err_up)
 if (length(mp)==8)|| (length(mp)==7) || (m_ind==3)
     hold on
-    errorbar([1:4:4*nseq],mevolnew(1:nseq,2),sig_evolnew(1:nseq,2),'r')
+    errorbar([1:4:4*nseq],mevolnew(1:nseq,2),err_low,err_up,'r')
     legend('a','b')
     xlabel('Sequence number')
     ylabel('Elliptical radius (m)')
@@ -414,13 +598,7 @@ xticklabels(seqrange(1:10:nseq))
 % plot the aspect ratio
 if (length(mp)==8)|| (length(mp)==7) || (m_ind==3)
     figure
-    a_v=mevolnew(1:nseq,1);
-    b_v=mevolnew(1:nseq,2);
-    sig_a=sig_evolnew(1:nseq,1);
-    sig_b=sig_evolnew(1:nseq,2);
-    ratio=a_v./b_v;
-    sig_ratio=ratio.*sqrt((sig_a./a_v).^2+(sig_b./b_v).^2);
-    errorbar([1:4:4*nseq],ratio(1:nseq),sig_ratio(1:nseq),'r')
+    errorbar([1:4:4*nseq],aspect_ratio(1:nseq),err_ar_low(1:nseq),err_ar_up(1:nseq),'r')
     legend('M_1')
     xlabel('Sequence number')
     ylabel('Aspect Ratio')
@@ -445,18 +623,49 @@ xticklabels(seqrange(1:10:nseq))
 xlabel('Sequence number')
 ylabel('Centeral coordinate (m)')
 
-%% color styles
+%% Save the diffraction plot data from A1,A2,A3,A4
+% we need to switch back the fracture size and tilting angles
+model1_info=[log(m_1(:,1:2)) m_1(:,3:5) -m_1(:,6:8)];
+model2_info=[log(m_2(:,1)) m_2(:,2:4) -m_2(:,5:6)];
+model3_info=[log(m_3(:,1:2)) m_3(:,3:5) -m_3(:,6)];
+model4_info=[log(m_4(:,1)) m_4(:,2:4)];
+
+%% save the results in a json file 
+DiffRecord={};
+DiffRecord.seqnb=seqrange';
+% acquisition time
+DiffRecord.acqT=time;
+
+% Model indicator
+DiffRecord.m_ind=3; % needs to change here
+DiffRecord.mDE=model3_info; % needs to change here
+DiffRecord.SRPairs=SRPairs_all_3; % needs to change here
+DiffRecord.raytype=ray_type_all_3; % needs to change here
+
+txtoSave=jsonencode(DiffRecord);
+fname='G01ForFootPrintM3.json'; % needs to change here
+fid=fopen(fname,'w');
+fwrite(fid,txtoSave,'char');
+fclose(fid);
+
+%% read results from json code
+% color styles
 clr1=[68 1 84]/255.;
 clr2=[253 231 37]/255.;
 clr3=[92 201 99]/255.;
 clr4=[37 144 255]/255.;
 % clr2=[49 104 142]/255.;
 % clr3=[53 183 121]/255.;
-%% output the data as the 2D fracture footprint
-m_ind=1;
-m_evol=m_1;%m_1;
-SRPairs_all=SRPairs_all_1;%SRPairs_all_1;
-ray_type_all=ray_type_all_1;%ray_type_all_1;
+
+
+filename='G01ForFootPrintM3.json';
+D1 = jsondecode(fileread(filename));
+m_ind=D1.m_ind;
+m_evol=D1.mDE;
+SRPairs_all=D1.SRPairs;
+ray_type_all=D1.raytype;
+seqrange=D1.seqnb;
+
 fig_handle = figure('DefaultAxesFontSize',24);
 set(gcf,'Position',[100 100 600 600]); % set the figure size;
 seqlist = [1:10:length(seqrange)];
@@ -467,14 +676,20 @@ colorstyle=clr1;
 fig_handle=fractureFootprint(m_evol,seqlist,SRPairs_all,ray_type_all, myBlock,fig_handle,colorstyle,'-');
 hold on
 
-m_ind=2;
-m_evol=m_2;
-SRPairs_all=SRPairs_all_2;
-ray_type_all=ray_type_all_2;
+filename='G01ForFootPrintM4.json';
+D1 = jsondecode(fileread(filename));
+m_ind=D1.m_ind;
+m_evol=D1.mDE;
+SRPairs_all=D1.SRPairs;
+ray_type_all=D1.raytype;
+seqrange=D1.seqnb;
+
 colorstyle=clr2;
 % 2D fracture plot function
 % input: sequence list, plot style
 fig_handle=fractureFootprint(m_evol,seqlist,SRPairs_all,ray_type_all, myBlock,fig_handle,colorstyle,'-');
+
+
 %% Timing for the selected sequences
 fbin = [datapath datafold num2str(starttime) '.bin'];
 AcqTime = load_timing(fbin); % in date hours min sec format .... can be transformed in sec format
