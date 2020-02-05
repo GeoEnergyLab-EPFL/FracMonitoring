@@ -75,9 +75,8 @@ sig_d = (0.5*1e-6);    % variance of measurement
 % this should be the variance of the picked arrival time, can change from case to case
 % we adopt here the average picked error 0.5\mu s
 
-global Solid  Cdinvdiag;
+global Solid
 Solid = gabbro;
-Cdinvdiag =(1/(1*sig_d^2))*ones(length(d),1); % data inverse of variance
 
 global prior
 
@@ -88,14 +87,16 @@ global m_ind;
 % guessed values vector a,b, center coordinate (XYZ),
 % (alpha-local rotation; beta-tilt angle, most constrained; gamma-direction of the slope)
 m_ind=1;
-mp= [ .05;.05; .125;.125;.1285; 0.;0.;0. ];
-sig_p = [.125;.125;0.02;0.02;0.006;pi/4;pi/60;pi/2]; % guessed variances
+mp= [ log(0.05);log(0.05); .125;.125;.1285; 0.;0.;0. ];
+sig_p = [-log(0.125);-log(0.125);0.02;0.02;0.006;pi/4;pi/60;pi/2]; % guessed variances
+% relaxed tilt angle
+%sig_p = [.125;.125;0.02;0.02;0.006;pi/4;pi/18;pi/2]; % guessed variances
 
 %% M2_Radial model indicator as 2
 % for the radial case r x y z alpha beta
 m_ind=2;
-mp= [ .05;.125;0.125;.1285;0.;0.];
-sig_p = [.125;0.02;0.02;0.006;pi/60;pi/2]; % guessed variances
+mp= [ log(0.05);.125;0.125;.1285;0.;0.];
+sig_p = [-log(0.125);0.02;0.02;0.006;pi/18;pi/2]; % guessed variances
 
 %% M3_Ellipse model indicator as 3
 %   a b    x y z, theta, phi psi
@@ -132,7 +133,7 @@ prior = GaussianPrior(mp,sig_p);% build the object
 
 %%  direct unconstrained optimization (Nelder-Mead simplex)
 
-[x,fval,exitflag,output] = fminsearch(@minusPosteriorPDF,mp);
+[x,fval,exitflag,output] = fminsearch(@minusPosteriorPDF,[mp;sig_d]);
 % quadratic approximation of the posterior variaance
 [Ctilde]=Posterior_Covariance_Matrix_ellipse(x);
 sig_app_x=diag(Ctilde).^0.5;
@@ -140,23 +141,29 @@ x'
 sig_app_x' 
 
 %% DE (differential evolution) algorithm (global optimization)
-VTR = 0.1; % stop limit for the objective function, the value of the cost function below which the optimization would be stopped
-D = length(mp);% number of parameters of the objective function
+VTR = -1e6; % stop limit for the objective function, the value of the cost function below which the optimization would be stopped
+D = length(mp)+1;% number of parameters of the objective function
            
-XVmin = 0.*mp'; % vector of lower bounds XVmin(1) ... XVmin(D)
+%XVmin =[0.*mp' 0]; % vector of lower bounds XVmin(1) ... XVmin(D)
 switch m_ind
     case 1
-        XVmax = [.250;.250;.250;.250;.250;pi;pi;pi/2]'; % vector of upper bounds
+        XVmax = [log(.250);log(.250);.250;.250;.250;pi/2;pi;pi; log(10*sig_d)]'; % vector of upper bounds
+        XVmin = [log(0.01);log(0.01);0.;0.;0.;0;0.;0.;log(0.01*sig_d)]';
     case 2
-        XVmax = [.250;.250;.250;.250;pi;pi]';
+        XVmax = [log(.250);.250;.250;.250;pi;pi; 10*sig_d]';
+        XVmin = [log(0.01);0.;0.;0.;0.;0.;-100]';
     case 3
-        XVmax = [.250;.250;.250;.250;.250;pi]'; % vector of upper bounds
+        XVmax = [log(.250);log(.250);.250;.250;.250;pi; 10*sig_d]'; % vector of upper bounds
+        XVmin = [-5.;-5.;0.;0.;0.;0.;-100]';
     case 4
-        XVmax = [.250;.250;.250;.250]';    
+        XVmax = [log(.250);.250;.250;.250; 10*sig_d]';
+        XVmin = [-5.;0.;0.;0.;-100]';
     case 5
-        XVmax = [.250;.250;.250;.250;pi;pi;pi/2]'; % vector of upper bounds
+        XVmax = [log(.250);log(.250);.250;.250;pi;pi;pi/2; 10*sig_d]'; % vector of upper bounds
+        XVmin = [-5.;-5.;0.;0.;0.;0.;0.;-100]';
     case 6
-        XVmax = [.250;.250;.250;pi;pi]';
+        XVmax = [log(.250);.250;.250;pi;pi; 10*sig_d]';
+        XVmin = [-5.;0.;0.;0.;0.;-100]';
 end
 
 NP = 10*D; % number of population members, 10D is by defaut
@@ -165,9 +172,28 @@ F = 0.8; % DE-stepsize F from interval [0, 2]
 CR = 0.5; % crossover probability constant from interval [0, 1]
 strategy = 7;
 refresh = 10; 
-[bestmem,bestval,nfeval] = devec3(@minusPosteriorPDF,VTR,D,XVmin,XVmax,[],NP,itermax,F,CR,strategy,refresh);
+[z_opt,bestval,nfeval] = devec3(@minusPosteriorPDF,VTR,D,XVmin,XVmax,[],NP,itermax,F,CR,strategy,refresh);
+
+%% Calculate the covariance matrix
+
+[Cpost]=Posterior_Covariance_Matrix_ellipse(z_opt);
+sig_app_mpost=diag(Cpost).^0.5; 
+
+% calculate the Bayes factor
+cp=det(diag(sig_p.^2));
+% log version
+prob_model=-bestval-0.5*cp+0.5*det(Cpost);
+% nonlog version
+%prob_model(i)=exp(-fval)/(cp.^0.5).*((det(Cpost)).^0.5);%/((2*pi).^((length(d)-1)/2));
+   
+%%%%% check fit
+m = z_opt(1:length(z_opt)-1);
+noise = z_opt(length(z_opt));
+
+
 
 %% compare the arrival time from the optmization and the measurement
+bestmem=z_opt(1:length(z_opt)-1);
 m = bestmem';
 switch m_ind
     case 1 % ellipse case
