@@ -94,7 +94,7 @@ for i = 1:nseq
         xlim([0, myBlock.L_N]);
         ylim([0, myBlock.L_E]);
 
-        res = diffractionForward(Solid,SRPairs_all{seqlist(i)},ell,ray_type_all{seqlist(i)});
+        res = diffractionForward(Solid,SRPairs_all(seqlist(i)),ell,ray_type_all{seqlist(i)});
         plot(res(:,2),res(:,3),'.','color',[233.,234.,235.]/255.,'MarkerSize',8);
         
 end
