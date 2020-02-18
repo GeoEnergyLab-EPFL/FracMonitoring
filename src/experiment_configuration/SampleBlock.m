@@ -114,7 +114,7 @@ classdef SampleBlock
                     return;
             end
             hold on
-            title([sidemarker ' platten'],'FontSize',30);
+            %title([sidemarker ' platten'],'FontSize',30);
             hold on
             rectangle('Position',[0 0 l_x l_y]);
             axis equal tight

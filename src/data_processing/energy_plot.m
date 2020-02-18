@@ -56,7 +56,7 @@ function [F,fig_handle] = evolution_transmit(seq,SRmap,energy,myBlock,myPlattens
 sidemarker='T'; % we plot the top platten by default 
 fig_handle=plotside2Dwithplattens(myBlock,myPlattens,sidemarker,fig);
 hold on
-mkrsize=18;
+mkrsize=8;
 xyzTransd = calc_global_coord(myTransducers,myPlattens);
 
 for i=1:size(energy,1)
@@ -71,16 +71,18 @@ for i=1:size(energy,1)
         % there is sequences recorded
         % plot the ellipse
         idx=0;
-        for i_d=1:size(DiffractionRecord,1)
-            if DiffractionRecord(i_d).seqnb==seq(i)
+        for i_d=1:size(DiffractionRecord.mDE,1)
+            if idx==0
+            if DiffractionRecord.seqnb(i_d)==seq(i)
             	idx=i_d;
+            end
             end
         end
         disp(idx)
         if idx>0
-            m=DiffractionRecord(idx).mDE;
+            m=DiffractionRecord.mDE(idx,:);
             % we need to ajust the model 
-            m_ind=DiffractionRecord(idx).m_ind;
+            m_ind=DiffractionRecord.m_ind;
             switch m_ind
                 case 1
                     ell=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
@@ -102,9 +104,9 @@ for i=1:size(energy,1)
                     disp('Please check the m_ind input in the Diffraction Record file');
             end
             
-            plot(Elli_pts(:,1),Elli_pts(:,2),[colortype '-'],'LineWidth',3);
+            plot(Elli_pts(:,1),Elli_pts(:,2),[colortype '-'],'LineWidth',2.5);
             hold on
-            title(['Seq ' num2str(DiffractionRecord(idx).seqnb) ' ' DiffractionRecord(idx).acqT])
+            %title(['Seq ' num2str(DiffractionRecord.seqnb(idx)) ' ' DiffractionRecord.acqT(idx)])
             hold on
         end
     end  
@@ -116,11 +118,11 @@ for i=1:size(energy,1)
         if ~isempty(yield)
                 % set color value    
             if energy(i,ii)>=yield  %7 for G01 fracture opening  %0.8 for M05 transmission signal
-                %clr=[1 1 1];
-                clr=[253 231 37]/255.;
-            else
-                %clr=[253 231 37]/255.;
                 clr=[1 1 1];
+                %clr=[253 231 37]/255.;
+            else
+                clr=[253 231 37]/255.;
+                %clr=[1 1 1];
             end
             hold on
             plot(xyzTransd(SRmap(ii,1),1),xyzTransd(SRmap(ii,1),2),...
@@ -237,16 +239,16 @@ for s=1:size(energy_all,1)
         % there is sequences recorded
         % plot the ellipse
         idx=0;
-        for i_d=1:size(DiffractionRecord,1)
-            if DiffractionRecord(i_d).seqnb==seq(s)
+        for i_d=1:size(DiffractionRecord.mDE,1)
+            if DiffractionRecord.seqnb(i_d)==seq(s)
             	idx=i_d;
             end
         end
         disp(idx)
         if idx>0
-            m=DiffractionRecord(idx).mDE;
+            m=DiffractionRecord.mDE(idx,:);
             % we need to ajust the model 
-            m_ind=DiffractionRecord(idx).m_ind;
+            m_ind=DiffractionRecord.m_ind;
             switch m_ind
                 case 1
                     ell=Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
@@ -270,7 +272,7 @@ for s=1:size(energy_all,1)
             
             plot(Elli_pts(:,i),Elli_pts(:,j),[colortype '-'],'LineWidth',3);
             hold on
-            title(['Seq ' num2str(DiffractionRecord(idx).seqnb) ' ' DiffractionRecord(idx).acqT])
+            title(['Seq ' num2str(DiffractionRecord.seqnb(idx)) ' ' DiffractionRecord.acqT(idx)])
             hold on
         end
     end

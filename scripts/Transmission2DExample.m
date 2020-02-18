@@ -172,7 +172,7 @@ end
 hold on 
 legend('9-SR30', '10-SR32','19-SR29','20-SR31')
 %% Read the diffraction data
-filename = 'G01DforT.json';
+filename = '/Users/dongliu/Documents/experimentDesignandResults/AcousticData/G01_14_03_2019/DiffractionInversion/SecondCheck/GNewInversion/G01ForFootPrintM2.json';%'G01DforT.json';
 DiffractionRecord = jsondecode(fileread(filename));
 
 %% set the energy structure and plot the results
@@ -248,6 +248,7 @@ Energy.SRmap=[(1:16)' (1:16)'];
 fig_test = figure('DefaultAxesFontSize',24);
 set(gcf,'Position',[100 100 600 600]); % set the figure size;
 [F,fig_test]=energy_plot(Energy,myBlock,myPlattens,myTransducers,DiffractionRecord,fig_test,'r',6)
+% we set 6 microns as the limit
 
 
 %% plot the energy of one sequence % Sequence plot choosing from Seq.27, 28, 29, 30, 31, set criteria as 0.8
@@ -258,9 +259,11 @@ Energy.seq=sel_seq;
 % for transmission P-wave signals
 Energy.energy=width_profile(sel_seq,:);
 Energy.SRmap=[(1:16)' (1:16)'];
-fig_test = figure('DefaultAxesFontSize',24);
-set(gcf,'Position',[100 100 600 600]); % set the figure size;
+fig_test = figure('DefaultAxesFontSize',14);
+set(gcf, 'Units', 'Inches', 'Position', [0, 0, 3.75, 3.75], 'PaperUnits', 'Inches', 'PaperSize', [3.75, 3.75])
+%set(gcf,'Position',[100 100 600 600]); % set the figure size;
 [F,fig_test]=energy_plot(Energy,myBlock,myPlattens,myTransducers,DiffractionRecord,fig_test,'k',6)
+% for GABB_001 we set the limit as 6 microns
 
 %% plot only the 2D diffraction curve
 sel_seq=58;
@@ -271,5 +274,4 @@ Energy.SRmap=[(1:16)' (1:16)'];
 fig_test = figure('DefaultAxesFontSize',24);
 set(gcf,'Position',[100 100 600 600]); % set the figure size;
 [F,fig_test]=energy_plot(Energy,myBlock,myPlattens,myTransducers,DiffractionRecord,fig_test,'k',0.8)
-
 

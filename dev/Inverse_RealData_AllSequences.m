@@ -82,7 +82,7 @@ sig_p = [-log(0.125);-log(0.125);0.02;0.02;0.006;pi/4;pi/60;pi/2]; % guessed var
 % for the radial case r x y z alpha beta
 m_ind=2;
 mp= [ log(0.05);.125;0.125;.1285;0.;0.];
-sig_p = [-log(0.125);0.02;0.02;0.006;pi/18;pi/2]; % guessed variances
+sig_p = [-log(0.125);0.02;0.02;0.006;pi/60;pi/2]; % guessed variances
 
 %% M3_Ellipse with zero dip model indicator as 3
 % for the elliptical case a b x y z self-rotation alpha
@@ -140,6 +140,8 @@ switch m_ind
         inverse_method=zeros(nseq,1);
 end
 
+inverse_method=ones(nseq,1);
+
 %seq40 seq79
 mevol=zeros(nseq,length(mp)+1);% 22-114 %>=3traces:24-111 
 sig_evol=zeros(nseq,length(mp)+1);
@@ -152,7 +154,7 @@ prob_model=[];
 Pair_number=[];% number of pairs usded for each sequence
 likeli_model=[];
 
-for i=58:58%1:nseq
+for i=29:29%1:nseq
     seqnb=seqrange(i);
     % Read the SRmap and arrival time
     [Pair_info, Pair_acqT]=load_diffraction(fpath, sidemarker, wave_type, seqnb);
@@ -186,14 +188,14 @@ for i=58:58%1:nseq
         % and maximum values
         switch m_ind
             case 1
-                XVmax = [log(.250);log(.250);.250;.250;.250;pi/2;pi;pi; log(20*sig_d)]'; % vector of upper bounds
-                XVmin = [log(0.01);log(0.01);0.;0.;0.;0;0.;0.;log(0.01*sig_d)]';
+                XVmax = [log(.250);log(.250);.250;.250;.250;pi/4;pi/2;pi/2; log(20*sig_d)]'; % vector of upper bounds
+                XVmin = [log(0.01);log(0.01);0.;0.;0.;-pi/4;-pi/2;-pi/2;log(0.01*sig_d)]';
             case 2
-                XVmax = [log(.250);.250;.250;.250;pi;pi; log(20*sig_d)]';
-                XVmin = [log(0.01);0.;0.;0.;0.;0.;log(0.01*sig_d)]';
+                XVmax = [log(.250);.250;.250;.250;pi/2;pi/2; log(20*sig_d)]';
+                XVmin = [log(0.01);0.;0.;0.;-pi/2;-pi/2;log(0.01*sig_d)]';
             case 3
-                XVmax = [log(.250);log(.250);.250;.250;.250;pi; log(20*sig_d)]'; % vector of upper bounds
-                XVmin = [log(0.01);log(0.01);0.;0.;0.;0.;log(0.01*sig_d)]';
+                XVmax = [log(.250);log(.250);.250;.250;.250;pi/2; log(20*sig_d)]'; % vector of upper bounds
+                XVmin = [log(0.01);log(0.01);0.;0.;0.;-pi/2;log(0.01*sig_d)]';
             case 4
                 XVmax = [log(.250);.250;.250;.250; log(20*sig_d)]';
                 XVmin = [log(0.01);0.;0.;0.;log(0.01*sig_d)]';
@@ -285,7 +287,7 @@ for i=58:58%1:nseq
     
     % write the info of the arrival and estimated error
 %     if seqnb==50 % we choose the Seq.50
-%         datasave=[[1:length(d)]',d*1e6,ones(length(d),1)*sig_d*1e6,res(:,1)*1e6];
+%         datasave=[[1:length(d)]',d*1e6,ones(length(d),1)*exp(noise)*1e6,res(:,1)*1e6];
 %         fid = fopen('G01Seq50M2Matching.txt','wt');
 %         for ii = 1:size(datasave,1)% 
 %             fprintf(fid,'%g\t',datasave(ii,:));
@@ -319,12 +321,12 @@ fprintf(fileID,'%d %d\n',B');
 fclose(fileID);
 
 %% Save the correlation matrix
-fileID = fopen(['G01Seq79Corr.txt'],'w');
+fileID = fopen(['G01Seq79Corr.txt'],'w'); % needs to adjust the name here
 fprintf(fileID,'%d %d %d %d %d %d %d %d %d\n',rho_matrix);
 fclose(fileID);
 
 %% plot the correlation matrix
-fid = fopen('G01Seq79Corr.txt');
+fid = fopen('G01Seq79Corr.txt'); % needs to adjust the name here
 corr_matrix = textscan(fid,'%f%f%f%f%f%f%f%f%f','HeaderLines',0,'CollectOutput',1);
 corr_matrix = corr_matrix{:};
 fid = fclose(fid);
@@ -334,8 +336,10 @@ colormap(viridis());
 
 abscorr=abs(corr_matrix(1:8,1:8));
 
-fig_handle = figure('DefaultAxesFontSize',24);
-set(gcf,'Position',[100 100 600 600]);
+% fig_handle = figure('DefaultAxesFontSize',24);
+% set(gcf,'Position',[100 100 600 600]);
+fig_handle = figure('DefaultAxesFontSize',12);
+set(gcf, 'Units', 'Inches', 'Position', [0, 0, 3., 3.], 'PaperUnits', 'Inches', 'PaperSize', [3., 3.])
 figure(fig_handle)
 imagesc(1:size(abscorr,2),1:size(abscorr,1),abscorr)
 axis square
@@ -626,8 +630,11 @@ ylabel('Centeral coordinate (m)')
 %% Save the diffraction plot data from A1,A2,A3,A4
 % we need to switch back the fracture size and tilting angles
 model1_info=[log(m_1(:,1:2)) m_1(:,3:5) -m_1(:,6:8)];
+%%
 model2_info=[log(m_2(:,1)) m_2(:,2:4) -m_2(:,5:6)];
+%%
 model3_info=[log(m_3(:,1:2)) m_3(:,3:5) -m_3(:,6)];
+%%
 model4_info=[log(m_4(:,1)) m_4(:,2:4)];
 
 %% save the results in a json file 
@@ -654,11 +661,9 @@ clr1=[68 1 84]/255.;
 clr2=[253 231 37]/255.;
 clr3=[92 201 99]/255.;
 clr4=[37 144 255]/255.;
-% clr2=[49 104 142]/255.;
-% clr3=[53 183 121]/255.;
+clr0=[105 105 105]/255.;
 
-
-filename='G01ForFootPrintM3.json';
+filename='/Users/dongliu/Documents/experimentDesignandResults/AcousticData/G01_14_03_2019/DiffractionInversion/SecondCheck/GNewInversion/G01ForFootPrintM1.json';
 D1 = jsondecode(fileread(filename));
 m_ind=D1.m_ind;
 m_evol=D1.mDE;
@@ -666,17 +671,18 @@ SRPairs_all=D1.SRPairs;
 ray_type_all=D1.raytype;
 seqrange=D1.seqnb;
 
-fig_handle = figure('DefaultAxesFontSize',24);
-set(gcf,'Position',[100 100 600 600]); % set the figure size;
+fig_handle = figure('DefaultAxesFontSize',14);
+set(gcf, 'Units', 'Inches', 'Position', [0, 0, 3.75, 3.75], 'PaperUnits', 'Inches', 'PaperSize', [3.75, 3.75])
 seqlist = [1:10:length(seqrange)];
 seqrange(seqlist)
-colorstyle=clr1;
+colorstyle=clr3;
 % 2D fracture plot function
 % input: sequence list, plot style
 fig_handle=fractureFootprint(m_evol,seqlist,SRPairs_all,ray_type_all, myBlock,fig_handle,colorstyle,'-');
+
 hold on
 
-filename='G01ForFootPrintM4.json';
+filename='/Users/dongliu/Documents/experimentDesignandResults/AcousticData/G01_14_03_2019/DiffractionInversion/SecondCheck/GNewInversion/G01ForFootPrintM2.json';
 D1 = jsondecode(fileread(filename));
 m_ind=D1.m_ind;
 m_evol=D1.mDE;
@@ -684,7 +690,7 @@ SRPairs_all=D1.SRPairs;
 ray_type_all=D1.raytype;
 seqrange=D1.seqnb;
 
-colorstyle=clr2;
+colorstyle=clr0;
 % 2D fracture plot function
 % input: sequence list, plot style
 fig_handle=fractureFootprint(m_evol,seqlist,SRPairs_all,ray_type_all, myBlock,fig_handle,colorstyle,'-');

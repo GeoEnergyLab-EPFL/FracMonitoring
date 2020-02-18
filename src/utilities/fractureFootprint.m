@@ -88,21 +88,23 @@ for i = 1:nseq
         end
         
         hold on
-        plot(Elli_pts(:,1),Elli_pts(:,2),plotstyle,'color',colorstyle,'LineWidth',3);
+        plot(Elli_pts(:,1),Elli_pts(:,2),plotstyle,'color',colorstyle,'LineWidth',2.5);
         
         hold on
         xlim([0, myBlock.L_N]);
         ylim([0, myBlock.L_E]);
+        xlabel('Easting (m)');
+        ylabel('Northing (m)');
 
         res = diffractionForward(Solid,SRPairs_all(seqlist(i)),ell,ray_type_all{seqlist(i)});
-        plot(res(:,2),res(:,3),'.','color',[233.,234.,235.]/255.,'MarkerSize',8);
+        plot(res(:,2),res(:,3),'.','color',[252 241 155]/255.,'MarkerSize',4);
         
 end
 hold on
 if (m_ind==1) || (m_ind==3) || (m_ind==5) % the case of the ellipse
-    plot(m(seqlist,3),m(seqlist,4),'.-','color',colorstyle,'MarkerSize',10);
+    plot(m(seqlist,3),m(seqlist,4),'.-','color',colorstyle,'MarkerSize',4);
 else
-    plot(m(seqlist,2),m(seqlist,3),'.-','color',colorstyle,'MarkerSize',10);
+    plot(m(seqlist,2),m(seqlist,3),'.-','color',colorstyle,'MarkerSize',4);
 end
 
 end
