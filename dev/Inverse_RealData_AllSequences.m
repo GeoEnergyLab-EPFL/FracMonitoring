@@ -117,6 +117,7 @@ prior = GaussianPrior(mp,sig_p);% build the object
 
 %% Set the calculate sequence range
 seqrange=22:89;
+%seqrange=28:30;
 nseq=length(seqrange);
 
 %% Inverse problem for M1-M4
@@ -141,6 +142,7 @@ switch m_ind
 end
 
 inverse_method=ones(nseq,1);
+inverse_method=zeros(nseq,1);
 
 %seq40 seq79
 mevol=zeros(nseq,length(mp)+1);% 22-114 %>=3traces:24-111 
@@ -154,7 +156,7 @@ prob_model=[];
 Pair_number=[];% number of pairs usded for each sequence
 likeli_model=[];
 
-for i=29:29%1:nseq
+for i=1:nseq
     seqnb=seqrange(i);
     % Read the SRmap and arrival time
     [Pair_info, Pair_acqT]=load_diffraction(fpath, sidemarker, wave_type, seqnb);
@@ -516,7 +518,7 @@ fclose(fileID);
 
 %% Check the quadratic approximation around the minimum for one certain m_post
 % set the sequence number
-seqnb=85;
+seqnb=29;
 
 % Read the SRmap and arrival time
 [Pair_info, Pair_acqT]=load_diffraction(fpath, sidemarker, wave_type, seqnb);
@@ -644,13 +646,13 @@ DiffRecord.seqnb=seqrange';
 DiffRecord.acqT=time;
 
 % Model indicator
-DiffRecord.m_ind=3; % needs to change here
-DiffRecord.mDE=model3_info; % needs to change here
-DiffRecord.SRPairs=SRPairs_all_3; % needs to change here
-DiffRecord.raytype=ray_type_all_3; % needs to change here
+DiffRecord.m_ind=2; % needs to change here
+DiffRecord.mDE=model2_info; % needs to change here
+DiffRecord.SRPairs=SRPairs_all_2; % needs to change here
+DiffRecord.raytype=ray_type_all_2; % needs to change here
 
 txtoSave=jsonencode(DiffRecord);
-fname='G01ForFootPrintM3.json'; % needs to change here
+fname='G01ForFootPrintM2.json'; % needs to change here
 fid=fopen(fname,'w');
 fwrite(fid,txtoSave,'char');
 fclose(fid);
@@ -679,7 +681,7 @@ colorstyle=clr3;
 % 2D fracture plot function
 % input: sequence list, plot style
 fig_handle=fractureFootprint(m_evol,seqlist,SRPairs_all,ray_type_all, myBlock,fig_handle,colorstyle,'-');
-
+%%
 hold on
 
 filename='/Users/dongliu/Documents/experimentDesignandResults/AcousticData/G01_14_03_2019/DiffractionInversion/SecondCheck/GNewInversion/G01ForFootPrintM2.json';
@@ -712,41 +714,45 @@ fig_handle=plotdirectrays(SRdiff,fig_b);
 % set the exception(errored) sequence
 exception=[];
 %fig2 = figure('units','normalized','outerposition',[0 0 1 1])
-fig2 = figure('DefaultAxesFontSize',24);
-set(gcf,'Position',[100 100 600 600]); % set the figure size;
+%fig2 = figure('DefaultAxesFontSize',24);
+fig2 = figure('DefaultAxesFontSize',16);
+%set(gcf,'Position',[100 100 600 600]); % set the figure size;
+set(gcf,'Position',[100 100 500 500]); % set the figure size;
 i_output = 0;
-for i = 29:29 %1:nseq
-    m_i = mevol(i,:);
+for i = 1:length(seqrange) %1:nseq
+    m_i = m_evol(i,:);
     [~,id]=ismember(i,exception);
     if id==0
-        fractureShape_plot(m_i,Solid,SRPairs_all{i},ray_type_all{i},...
-            myBlock,myTransducers,myPlattens,fig2);
+        fractureShape_plot(m_i,Solid,SRPairs_all(i),ray_type_all{i},...
+            myBlock,myTransducers,myPlattens,fig2,'k.-');
         i_output=i_output+1;
         hold on
-        title(['\fontsize{40}Seq ' num2str(seqrange(i)) ': ' datestr(time{i})])
+        title(['\fontsize{20}GABB-001 Seq ' num2str(seqrange(i)) ': ' datestr(AcqTime(i))])
+        hold on
+        text(-0.,-0.065,0,sprintf('© EPFL, Geo-Energy Lab (2019-2020) \nD. Liu, B. Lecampion, T. Blum'))
         F(i_output)=getframe(fig2);
             %pause(2)
-%         if i<nseq
-%             clf;
-%         end
+        if i<nseq
+            clf;
+        end
     end
 
 end
 
-% % create the video writer with 1 fps
-%   writerObj = VideoWriter('myVideo.avi');
-%   writerObj.FrameRate = 10;
-%   % set the seconds per image
-% % open the video writer
-% open(writerObj);
-% % write the frames to the video
-% for i=1:length(F)
-%     % convert the image to a frame
-%     frame = F(i) ;    
-%     writeVideo(writerObj, frame);
-% end
-% % close the writer object
-% close(writerObj);
+% create the video writer with 1 fps
+  writerObj = VideoWriter('GABB-001-M1.mp4','MPEG-4');
+  writerObj.FrameRate = 10;
+  % set the seconds per image
+% open the video writer
+open(writerObj);
+% write the frames to the video
+for i=1:length(F)
+    % convert the image to a frame
+    frame = F(i) ;    
+    writeVideo(writerObj, frame);
+end
+% close the writer object
+close(writerObj);
 
 %% analyse combined with the opening for one chosen model
 % if considered as a radial fracture
