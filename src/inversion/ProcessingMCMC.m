@@ -18,24 +18,30 @@ fprintf(' - \n');
 col={'.r','.b','.m','.g','.y','.k','+r','+b'};
 
 ns=n_resampling;
-q=length(Xf(1,:)); % problem dimension
+
+%%%%%%%%%%%%%%%%%%%%29/05/2020%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+q=length(Xf(1,:))-1; % problem dimension
+clr3=[92 201 99]/255.;
+clr4=[37 144 255]/255.;
+clr0=[105 105 105]/255.;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global m_ind;
 
 switch q
     case 8
-        strings_m={'a','b','x_1','x_2','x_3','\psi','\theta','\phi'};
+        strings_m={'ln a','ln b','x_1','x_2','x_3','\psi','\theta','\phi'};
     case 7
-        strings_m={'a','b','x_1','x_2','\psi','\theta','\phi'};
+        strings_m={'ln a','ln b','x_1','x_2','\psi','\theta','\phi'};
     case 6
         if(m_ind==2)
-            strings_m={'r','x_1','x_2','x_3','\theta','\phi'};
+            strings_m={'ln r','x_1','x_2','x_3','\theta','\phi'};
         else
-            strings_m={'a','b','x_1','x_2','x_3','\psi'};
+            strings_m={'ln a','ln b','x_1','x_2','x_3','\psi'};
         end
     case 5
-        strings_m={'r','x_1','x_2','\theta','\phi'};
+        strings_m={'ln r','x_1','x_2','\theta','\phi'};
     case 4
-        strings_m={'r','x_1','x_2','x_3'};
+        strings_m={'ln r','x_1','x_2','x_3'};
 end
 
 
@@ -105,8 +111,9 @@ meanX=MPost(:,1);
 Ctilde=Ctilde_app(:,:,1);
 rho=rho_all(:,:,1);
 
-handler_histm=figure('Name',' Histogram of model parameters from MCMC' ,'DefaultAxesFontSize',24);
-set(gcf,'Position',[100 100 900 600]); % set the figure size;
+handler_histm=figure('Name',' Histogram of model parameters from MCMC' ,'DefaultAxesFontSize',18);
+%set(gcf,'Position',[100 100 900 600]); % set the figure size;
+set(gcf, 'Units', 'Inches', 'Position', [0, 0, 16, 8], 'PaperUnits', 'Inches', 'PaperSize', [16, 8])
 
 % fit of Gaussian pdf to the mcmc results.
 
@@ -115,7 +122,9 @@ for i=1:q
 
 %    x = linspace(min(Xsp(:,i)),max(Xsp(:,i)),100);
 %    norm2 = normpdf(x,meanX(i),Ctilde(i,i)^0.5);
-    hist(Xsp(:,i),60);hold on;
+    [Nh,Xh]=hist(Xsp(:,i),60);
+    Bh=bar(Xh,Nh,'facecolor',clr3);
+    hold on;
 %    plot(x,norm2,'r-');
 %    hold on; 
     
@@ -134,10 +143,10 @@ yc=sin(theta);
 myX=[xc yc];
 
  
-handler_cor=figure('Name',' Correlation Plot between model Parameters with confidence ellipses ' ,'DefaultAxesFontSize',24);
-set(gcf,'Position',[100 100 900 600]); % set the figure size;
-
-%(from MCMC(green), from Quad. approx(magenta))
+handler_cor=figure('Name',' Correlation Plot between model Parameters with confidence ellipses ' ,'DefaultAxesFontSize',14);
+%set(gcf,'Position',[100 100 900 600]); % set the figure size;
+set(gcf, 'Units', 'Inches', 'Position', [0, 0, 16, 8], 'PaperUnits', 'Inches', 'PaperSize', [16, 8])
+%(from MCMC(green,black), from Quad. approx(magenta,blue))
 
 ng=(q-1);
 kj=0;
@@ -150,7 +159,8 @@ for i=1:q
             kj=kj+1;
         end
         subplot(ng,ng,kj);
-        plot(Xsp(:,i),Xsp(:,j),'.');hold on;
+        pointcolor=plot(Xsp(:,i),Xsp(:,j),'.');hold on;
+        set(pointcolor,'color',clr3);
         plot(meanX(i),meanX(j),'.r' ); hold on;
         
         %         % Draw confidence ellipse from Covariance matrix from chain
@@ -161,7 +171,7 @@ for i=1:q
         aux(1,:)=aux(1,:)*2*sqrt(CC(i,i));   % 3 sigma
         aux(2,:)=aux(2,:)*2*sqrt(CC(j,j));
         
-        plot(aux(1,:)+meanX(i) ,aux(2,:)+meanX(j),'g','LineWidth',1.5); hold on;
+        plot(aux(1,:)+meanX(i) ,aux(2,:)+meanX(j),'k','LineWidth',1.5); hold on;
         
                  % Draw confidence ellipse from Covariance matrix from   Ctilde ::
         %
@@ -172,7 +182,7 @@ for i=1:q
                  aux(1,:)=aux(1,:)*2.*sqrt(Ctilde(i,i));
                  aux(2,:)=aux(2,:)*2.*sqrt(Ctilde(j,j));
         %
-                 plot(aux(1,:)+meanX(i) ,aux(2,:)+meanX(j),'m','LineWidth',1.5); hold on;
+                 plot(aux(1,:)+meanX(i) ,aux(2,:)+meanX(j),'b','LineWidth',1.5); hold on;
         %
         if q>=4 && q<=8
             title([strings_m{i},'  vs  ',strings_m{j}]);
