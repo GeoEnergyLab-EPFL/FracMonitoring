@@ -1,0 +1,81 @@
+Chain will be assumed stationary if the mode with the max post pdf do not change by more than 1.000000e-01 percent (in relative terms)
+Chain stationary  criteria after 799 accepted steps is = 3317.877425 percent, current mlogP =36.694767
+Chain stationary  criteria after 1599 accepted steps is = 0.258166 percent, current mlogP =37.090213
+Chain stationary  criteria after 2399 accepted steps is = 1.152618 percent, current mlogP =36.044765
+Chain stationary  criteria after 3199 accepted steps is = 1.207185 percent, current mlogP =39.038342
+Chain stationary  criteria after 3999 accepted steps is = 0.403497 percent, current mlogP =38.844230
+Chain stationary  criteria after 4799 accepted steps is = 0.431084 percent, current mlogP =38.530833
+Chain stationary  criteria after 5599 accepted steps is = 0.340463 percent, current mlogP =36.972718
+Chain stationary  criteria after 6399 accepted steps is = 1.327991 percent, current mlogP =40.338611
+Chain stationary  criteria after 7199 accepted steps is = 0.143405 percent, current mlogP =37.659533
+Chain appears stabilized w/r to "mode" after  7999 accepted steps, criteria is = 0.045000 percent, current mlogP =36.525497
+Current chain is no more stationary ! 
+Chain stationary  criteria after 8799 accepted steps is = 0.729913 percent, current mlogP =41.451339
+Chain stationary  criteria after 9599 accepted steps is = 0.760940 percent, current mlogP =38.948166
+Chain stationary  criteria after 10399 accepted steps is = 0.691403 percent, current mlogP =37.622498
+Chain stationary  criteria after 11199 accepted steps is = 0.222879 percent, current mlogP =35.683523
+Chain stationary  criteria after 11999 accepted steps is = 0.359856 percent, current mlogP =37.687355
+Chain appears stabilized w/r to "mode" after  12799 accepted steps, criteria is = 0.049458 percent, current mlogP =36.120184
+Current chain is no more stationary ! 
+Chain stationary  criteria after 13599 accepted steps is = 0.280693 percent, current mlogP =40.146943
+Chain stationary  criteria after 14399 accepted steps is = 0.100446 percent, current mlogP =36.693656
+Chain stationary  criteria after 15199 accepted steps is = 0.603049 percent, current mlogP =40.323043
+Chain stationary  criteria after 15999 accepted steps is = 0.514560 percent, current mlogP =35.178070
+Chain stationary  criteria after 16799 accepted steps is = 0.255368 percent, current mlogP =35.501257
+Chain stationary  criteria after 17599 accepted steps is = 0.240250 percent, current mlogP =36.624286
+Chain stationary  criteria after 18399 accepted steps is = 0.335070 percent, current mlogP =36.735601
+Chain stationary  criteria after 19199 accepted steps is = 1.152533 percent, current mlogP =37.032191
+Chain stationary  criteria after 19999 accepted steps is = 0.371899 percent, current mlogP =36.700990
+Chain stationary  criteria after 20799 accepted steps is = 0.101253 percent, current mlogP =36.408358
+Chain stationary  criteria after 21599 accepted steps is = 0.186807 percent, current mlogP =35.392772
+Chain stationary  criteria after 22399 accepted steps is = 0.125436 percent, current mlogP =36.687821
+Chain appears stabilized w/r to "mode" after  23199 accepted steps, criteria is = 0.098227 percent, current mlogP =36.521175
+Current chain is no more stationary ! 
+Chain stationary  criteria after 23999 accepted steps is = 1.191805 percent, current mlogP =35.193802
+Chain stationary  criteria after 24799 accepted steps is = 1.036518 percent, current mlogP =36.162585
+Chain stationary  criteria after 25599 accepted steps is = 0.114235 percent, current mlogP =37.029033
+Chain appears stabilized w/r to "mode" after  26399 accepted steps, criteria is = 0.012185 percent, current mlogP =38.750470
+Current chain is no more stationary ! 
+Chain stationary  criteria after 27199 accepted steps is = 0.456921 percent, current mlogP =36.699972
+Chain stationary  criteria after 27999 accepted steps is = 0.576323 percent, current mlogP =34.695099
+Chain stationary  criteria after 28799 accepted steps is = 0.104852 percent, current mlogP =36.259216
+Chain stationary  criteria after 29599 accepted steps is = 0.385667 percent, current mlogP =36.458228
+Chain stationary  criteria after 30399 accepted steps is = 0.137918 percent, current mlogP =39.087927
+Chain stationary  criteria after 31199 accepted steps is = 0.266387 percent, current mlogP =40.438011
+Chain stationary  criteria after 31999 accepted steps is = 0.101011 percent, current mlogP =35.325052
+Chain appears stabilized w/r to "mode" after  32799 accepted steps, criteria is = 0.018910 percent, current mlogP =40.271009
+Current chain is no more stationary ! 
+Chain stationary  criteria after 33599 accepted steps is = 0.550442 percent, current mlogP =39.910470
+Chain stationary  criteria after 34399 accepted steps is = 0.448656 percent, current mlogP =35.644406
+Chain stationary  criteria after 35199 accepted steps is = 0.484731 percent, current mlogP =36.663089
+Chain stationary  criteria after 35999 accepted steps is = 0.234591 percent, current mlogP =40.978591
+Chain stationary  criteria after 36799 accepted steps is = 0.203767 percent, current mlogP =38.542457
+Chain appears stabilized w/r to "mode" after  37599 accepted steps, criteria is = 0.098403 percent, current mlogP =38.001451
+Current chain is no more stationary ! 
+Chain stationary  criteria after 38399 accepted steps is = 0.294816 percent, current mlogP =36.704381
+Chain stationary  criteria after 39199 accepted steps is = 0.266297 percent, current mlogP =38.052250
+Chain stationary  criteria after 39999 accepted steps is = 0.401737 percent, current mlogP =39.719167
+Chain stationary  criteria after 40799 accepted steps is = 0.234597 percent, current mlogP =38.226777
+Chain stationary  criteria after 41599 accepted steps is = 0.433695 percent, current mlogP =40.504319
+Chain stationary  criteria after 42399 accepted steps is = 0.608344 percent, current mlogP =40.443161
+Chain stationary  criteria after 43199 accepted steps is = 0.541565 percent, current mlogP =40.754701
+Chain stationary  criteria after 43999 accepted steps is = 0.204997 percent, current mlogP =37.006005
+Chain stationary  criteria after 44799 accepted steps is = 0.269123 percent, current mlogP =39.806893
+Chain stationary  criteria after 45599 accepted steps is = 0.459229 percent, current mlogP =37.219882
+Chain stationary  criteria after 46399 accepted steps is = 0.187837 percent, current mlogP =42.881084
+Chain appears stabilized w/r to "mode" after  47199 accepted steps, criteria is = 0.028894 percent, current mlogP =37.487644
+Chain stationary  criteria 47999 accepted steps is = 0.039227 percent, current mlogP =38.136863
+Chain stationary  criteria 48799 accepted steps is = 0.005533 percent, current mlogP =36.341975
+Chain stationary  criteria 49599 accepted steps is = 0.026061 percent, current mlogP =38.031570
+Chain stationary  criteria 50399 accepted steps is = 0.003756 percent, current mlogP =34.340983
+Chain stationary  criteria 51199 accepted steps is = 0.008682 percent, current mlogP =36.126422
+Chain stationary  criteria 51999 accepted steps is = 0.059706 percent, current mlogP =38.298857
+Current chain is no more stationary ! 
+Chain stationary  criteria after 52799 accepted steps is = 0.219351 percent, current mlogP =34.446087
+Chain appears stabilized w/r to "mode" after  53599 accepted steps, criteria is = 0.020853 percent, current mlogP =34.043738
+Chain stationary  criteria 54399 accepted steps is = 0.001889 percent, current mlogP =37.782549
+Current chain is no more stationary ! 
+Chain stationary  criteria after 55199 accepted steps is = 0.788246 percent, current mlogP =36.927959
+Chain stationary  criteria after 55999 accepted steps is = 0.798554 percent, current mlogP =35.284072
+Chain appears stabilized w/r to "mode" after  56799 accepted steps, criteria is = 0.005860 percent, current mlogP =37.775457
+Chain stationary  criteria 57599 accepted steps is = 0.083541 percent, current mlogP =37.235015

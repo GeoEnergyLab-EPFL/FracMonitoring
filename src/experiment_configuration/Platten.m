@@ -4,40 +4,40 @@ classdef Platten
     % This class defines the platten object, that includes info on the
     % physical platten and hole positions as well as how the platten is
     % used in the global context of the reaction frame
-    
+
     properties
         type char       % cross or grid
         id(1,1) char    % id of the platten
         xy_holes(:,2) double     % positions of the transducer holes in local coordinates
         face(1,1) char
-        
+
         ep_x double % vector coordinates defining local e_x in the global block system of coordinates
         ep_y double % vector coordinates defining local e_y in the global block system of coordinates
         ep_z double % outward normal in the global block system of coordinates (pointing out of the block)
         offset
     end
-    
+
     properties (Dependent)
         n_holes % number of holes in platten
         R % rotation matrix from local to global coord system
     end
-    
+
     methods
         % constructor
         function obj = Platten(ID,face,block_data) % ,varargin
-            
+
             obj.id = ID; % platten id
             if ismember(face,{'N','S','E','W','T','B'})
                 obj.face = face;
             else
                 disp('Wrong sample face for platten')
             end
-            
+
             switch ID
                 case {'A','B'}
                     % it's a cross
                     obj.type='cross';
-                    
+
                     % positions of holes on platen A and B in m
                     dcross = 18*1E-3;    % top platen cross spacing
                     ddiag1 = 34*1E-3;    % top platen first diag spacing
@@ -56,11 +56,11 @@ classdef Platten
                         -(ddiag1+ddiag2) -(ddiag1+2*ddiag2)]/sqrt(2)]';
                     % write to property
                     obj.xy_holes = [x_tmp, y_tmp];
-                    
+
                 case {'C','D','E','F'}
                     % it's a grid
                     obj.type='grid';
-                    
+
                     % positions of holes on platen C, D, E and F in m
                     dhoriz = 50*1E-3;    % side platen horiz spacing
                     dvert1 = 20*1E-3;    % side platen first vert spacing
@@ -72,14 +72,14 @@ classdef Platten
                     % write to property
                     obj.xy_holes = [x_tmp, y_tmp];
             end
-            
+
             %             % add varargin
             %             nVarargs = length(varargin);
             %             if (nVarargs==2)
             %                 obj.offset_x = varargin{1};
             %                 obj.offset_y = varargin{2};
             %             end
-            
+
             switch (obj.face)
                 case 'N'
                     obj.ep_z = [0,1,0];
@@ -87,36 +87,36 @@ classdef Platten
                     obj.ep_y = [0,0,1]; % local coord vect in global coord system
                     obj.offset = [block_data.sizes(1)/2., block_data.sizes(2),...
                         block_data.sizes(3)/2.];
-                    
+
                 case 'S'
-                    
+
                     obj.ep_z = [0,-1,0];
                     obj.ep_x=[1,0,0];
                     obj.ep_y=[0,0,1];
                     obj.offset = [block_data.sizes(1)/2.,0., block_data.sizes(3)/2.];
-                    
+
                 case 'E'
-                    
+
                     obj.ep_z = [1,0,0];
                     obj.ep_x=[0,1,0];
                     obj.ep_y=[0,0,1];
-                    
+
                     obj.offset = [block_data.sizes(1) ,block_data.sizes(2)/2.,...
                         block_data.sizes(3)/2.];
-                    
+
                 case 'W'
                     obj.ep_z = [-1,0,0];
                     obj.ep_x = [0,-1,0];
                     obj.ep_y = [0,0,1];
                     obj.offset = [0. ,block_data.sizes(2)/2., block_data.sizes(3)/2.];
-                    
+
                 case 'T'
                     obj.ep_z = [0,0,1];
                     obj.ep_x = [1,0,0];
                     obj.ep_y = [0,1,0];
                     obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2.,...
                         block_data.sizes(3)];
-                    
+
                 case 'B'
                     obj.ep_z = [0,0,-1];
                     obj.ep_x = [-1,0,0];
@@ -124,23 +124,23 @@ classdef Platten
                     obj.offset = [block_data.sizes(1)/2. ,block_data.sizes(2)/2.,...
                         0.];
             end
-            
+
         end
         % end constructor
-        
-        
+
+
         % METHODS
         % method for dependant property "n_holes" number of holes
         function value = get.n_holes(obj)
             value = length(obj.xy_holes);
         end
-        
+
         % method for dependant property "R" rotation matrix
         function value = get.R(obj)
             % create rotation
             value = [obj.ep_x',obj.ep_y',obj.ep_z'];
         end
-        
+
         % plot platten geometry in 2D
         function fig_handle = plattenplot2D(obj,varargin)
             % open figure from passed handle if it exists
@@ -160,26 +160,26 @@ classdef Platten
             holetxt = cellstr(num2str((0:(obj.n_holes-1))'));
             txtoffset = 2;
             text(obj.xy_holes(:,1)+txtoffset,obj.xy_holes(:,2),holetxt)
-            
+
             % add edges of platten
             plot([-0.125 -0.125],[-0.125 0.125],'k')
             plot([-0.125 0.125],[0.125 0.125],'k')
             plot([0.125 0.125],[-0.125 0.125],'k')
             plot([-0.125 0.125],[-0.125 -0.125],'k')
             axis equal tight
-            
+
             % axes labeling
             xlabel('Easting (m)')
             ylabel('Northing (m)')
             zlabel('Height (m)')
         end
-        
-        % plot platten geometry in 3D 
+
+        % plot platten geometry in 3D
         function fig_handle = plattenplot3D(obj,block_data,varargin)
             % compute 3D locations
             xyz_loc = (obj.R*[obj.xy_holes(:,1), obj.xy_holes(:,2),...
                 zeros(size(obj.xy_holes(:,1)))]')'+obj.offset;
-            
+
             % open figure from passed handle if it exists
             if ~isempty(varargin)
                 if isgraphics(varargin{1})
@@ -206,18 +206,18 @@ classdef Platten
             letterIDpos = (obj.R*[-0.1 0.1 0]')'+obj.offset;
             text(letterIDpos(1),letterIDpos(2),letterIDpos(3),obj.id)
         end
-        
-        
+
+
         % Dong Liu -- 16/09/2019
-        % plot platten geometry in 2D for one face of the block 
+        % plot platten geometry in 2D for one face of the block
         function fig_handle = plattenplot2Dside(obj,sidemarker,varargin)
             % compute 3D locations
             xyz_loc = (obj.R*[obj.xy_holes(:,1), obj.xy_holes(:,2),...
                 zeros(size(obj.xy_holes(:,1)))]')'+obj.offset;
-            
+
             % get hole numbering
             holetxt = cellstr(num2str((0:(obj.n_holes-1))'));
-            
+
             % open figure from passed handle if it exists
             if ~isempty(varargin)
                 if isgraphics(varargin{1})
@@ -260,8 +260,7 @@ classdef Platten
             letterIDpos = [0.24,0.24]';
             text(letterIDpos(1),letterIDpos(2),obj.id)
         end
-        
-    end
-    
-end
 
+    end
+
+end
