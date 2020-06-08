@@ -17,6 +17,9 @@ function [mpost,sigpost]=MCMC_hist(accept,PX,X,k_o,stab,ns,varargin)
 % OUTPUTS
 %	mpost :: mean of fitted individual normal pdf on each parameters
 %   sigpost :: corresponding variance
+% Arguments
+% vararg1=mpost from DE algorithm
+% vararg2=sigpost from DE algorithm
 
 %%%%%%%%%%%%%%%%%% 29/05/2020 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 q=length(X(1,:))-1; % problem dimension, we remove the modelling noise as another dimension
@@ -24,6 +27,16 @@ q=length(X(1,:))-1; % problem dimension, we remove the modelling noise as anothe
 
 clr3=[92 201 99]/255.;
 clr0=[105 105 105]/255.;
+clr4=[37 144 255]/255.;
+
+narg = length(varargin);
+if narg>=2
+    if ~isempty(varargin)
+        mpostde=varargin{1};
+        sigpostde=varargin{2};
+    end
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global m_ind;
 
@@ -63,11 +76,16 @@ fclose(fid);
 
 % -LOG POST histogram
 handler_histpost=figure('Name','Histogram of - Log Posterior','DefaultAxesFontSize',24);
-set(gcf,'Position',[100 100 900 600]); % set the figure size;
+set(gcf,'Units', 'Inches','Position',[0 0 8 6]); % set the figure size;
 
-hp=histfit(mLogP,60,'lognormal');  % it should look like a lognormal pdf
-set(hp(1),'facecolor',clr3);
-set(hp(2),'color',clr0);
+%hp=histfit(mLogP,60,'lognormal');  % it should look like a lognormal pdf
+
+%hp=histfit(exp(-mLogP),60,'Normal');
+
+hp=histogram(mLogP,60);
+%set(hp(1),'facecolor',clr3);
+set(hp,'Facecolor',clr3);
+%set(hp(2),'color',clr0);
 %title('Histogram of - Log Posterior');
 %legend('It should look like a log Normal pdf' );
 
@@ -110,8 +128,49 @@ for i=1:q
     set(h(2),'color',clr0);
     hold on;
     
+    if narg>=2
+    % get the coefficient in the plots
+    ymax=max(get(h(2),'YData'));
+    coef=ymax*sqrt(2*pi).*sigpost(i);
+    disp(coef);
+    
+    % plot the Gaussian distribution
+    x=get(h(2),'XData');
+    y=(1/sqrt(2*pi)/sigpostde(i)).*exp(-(x-mpostde(i)).^2/2/(sigpostde(i).^2));
+    plot(x,y.*coef,'Color',clr4,'Linewidth',2);
+%     disp(size(x));
+%     disp(size(y));
+%     disp(x);
+%     disp(y);
+% another way of plotting Gaussian distribution without adjusting the
+% coefficient
+%     x = linspace(min(Xsp(:,i)),max(Xsp(:,i)),100);
+%     norm2 = normpdf(x,mpostde(i),sigpostde(i));
+%     plot(x,norm2,'r-');
+%     hold on; 
+
+
+    hold on;
+    end
+    
+%     xn=size(Xsp(:,i),1);
+%      xmin=min(Xsp(:,i));
+%      xmax=max(Xsp(:,i));
+
+    %disp(size(Xsp))
+    %disp(size(y))
+    %histfit(y,60);
+%     x0=get(h(2),'XData');
+%     x=[xmin:(xmax-xmin)./size(x0):xmax];
+%     y=get(h(2),'YData');
+%     yde=-2.8+0.1.*x;
+%     histfit(yde,60);
+%     disp(max(y));
+%     disp([min(x),max(x)]);
+%     hold on;
+    
     if q<=8 && q>=4
-        title([' Hist of  ',strings_m{i}]); %, ' mu: ', num2str(mpost(i))
+        title([strings_m{i}]); %, ' mu: ', num2str(mpost(i))
     else
         
         title([' Hist of m(',num2str(i),')']);
