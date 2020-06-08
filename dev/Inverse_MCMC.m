@@ -224,6 +224,8 @@ for i_rho=1:length(Cpost)
       rho_matrix(i_rho,j_rho)=sqrt(Cpost(i_rho,j_rho).^2/Cpost(i_rho,i_rho)/Cpost(j_rho,j_rho));
    end
 end
+mpostde=z_opt;
+sigpostde=sig_app_mpost;
 
 %% plot the fracture ellipse with diffracted waves
 fig_handle = figure('units','normalized','outerposition',[0 0 1 1]);
@@ -235,31 +237,61 @@ title(['\fontsize{40}Seq ' num2str(seqnb)])
 
 mstart=z_opt;
 Cstart=diag([1./prior.invCpdiag;1/(-log(sig_d))]);% this needs to be checked, this value should be always positive
-Smax=4000*length(mstart);
+Smax=50000*length(mstart);
 fid_log = fopen('mcmc.txt','w');
 
 [accept, Xf, PXf, cf ,k_o, stab]=MarkovChainMonteCarlo(fid_log, mstart,Cstart,Smax,1,0,@minusPosteriorPDF);
-% Not tested for M2 yet. % M1 acceptrate=0.3446
+
+%% save the mcmc results into a json file
+MCMCRecord={};
+MCMCRecord.mpostde=mpostde;
+MCMCRecord.sigpostde=sigpostde;
+MCMCRecord.accept=accept;
+MCMCRecord.Xf=Xf;
+MCMCRecord.PXf=PXf; 
+MCMCRecord.cf=cf; % needs to change here
+MCMCRecord.ko=k_o; % needs to change here
+MCMCRecord.stab=stab; % needs to change here
+
+txtoSave=jsonencode(MCMCRecord);
+fname='MCMCRecord.json'; % needs to change here
+fid=fopen(fname,'w');
+fwrite(fid,txtoSave,'char');
+fclose(fid);
+
+%% Read MCMC results from json file
+DMCMC = jsondecode(fileread('MCMCRecord.json'));
+mpostde=DMCMC.mpostde;
+sigpostde=DMCMC.sigpostde;
+accept=DMCMC.accept;
+Xf=DMCMC.Xf;
+PXf=DMCMC.PXf; 
+cf=DMCMC.cf; % needs to change here
+k_o=DMCMC.ko; % needs to change here
+stab=DMCMC.stab;
+
 %% post process - fast way assuming a single gaussian
 acceptrate=mean(accept) % should be between 0.2-0.4
-
+%%%%%%%%%%%we add one line here to add the constant terms in
+%%%%%%%%%%%minuslogposterior objective function
+PXfnew=PXf+0.5*log(det(diag(1./prior.invCpdiag)))+(length(d)+length(prior.invCpdiag))/2*log(2*pi);
 n_resampling=2; % sub_sampling of the accepted chain
-[mpost,sigpost]=MCMC_hist(accept,(PXf)-min(PXf)+1,Xf,k_o,stab,n_resampling);
+[mpost,sigpost]=MCMC_hist(accept,PXfnew,Xf,k_o,stab,n_resampling,mpostde,sigpostde);
 
 %% post process - mcmc
+% plot the correlation matrix with mcmc fitting results and MCMC
+% approximation results.
 
-%strings_m={'a','b','x_c','y_c','z_c','phi','theta','psi'};
-%col={'.r','.b','.m','.g','.y','.k','+r','+b'};
-
-%[MPost,Ctilde_all,W]=fitGaussiansMixture(Xsp,@minusPosteriorPDF);
 n_res=2; % subsampling
 [MPost,Ctilde_all,W]=ProcessingMCMC(accept,PXf,Xf,k_o,stab,n_res,@minusPosteriorPDF);
 
-%colormap(viridis());
+%% plot the correlation matrix with mcmc fitting results and DE results
 
+n_res=2; % subsampling
+[MPost,Ctilde_all,W]=ProcessingMCMCCompDE(accept,PXf,Xf,k_o,stab,n_res,mpostde,sigpostde,@minusPosteriorPDF);
 %% Visualization of the fracture front
- 
-m=mpost
+
+m=mpost;
 msig=mpost+sigpost;
 fig_handle = figure('units','normalized','outerposition',[0 0 1 1]);
 fig_handle = fractureShape_plot(m,Solid,SRPairs,ray_type,myBlock,myTransducers,myPlattens,fig_handle)
@@ -267,6 +299,39 @@ hold on
 fig_handle = fractureShape_plot(msig,Solid,SRPairs,ray_type,myBlock,myTransducers,myPlattens,fig_handle,'r.-')
 hold on
 title(['\fontsize{40}Seq ' num2str(seqnb)])
+
+%% check fit
+m = mpost;
+%SRPairs_multiseq{i_seq} = SRPairs;
+    switch m_ind
+        case 1
+            ell = Ellipse(m(1),m(2),m(3:5),m(6),m(7),m(8));
+        case 2
+            ell = Radial(m(1),m(2:4),m(5),m(6));
+        case 3
+            ell = Ellipse(m(1),m(2),m(3:5),m(6),0,0);
+        case 4
+            ell = Radial(m(1),m(2:4),0,0);
+        case 5
+            ell = Ellipse(m(1),m(2),[m(3:4);z_c],m(5),m(6),m(7));
+        case 6
+            ell = Radial(m(1),[m(2:3);z_c],m(4),m(5));
+        otherwise
+            disp('Please check your input vector');
+    end
+    
+res = diffractionForward(Solid,SRPairs,ell,ray_type);% give one the shortest time needed for diffraction
+
+ 
+figure
+errorbar([1:length(d)]',d*1e6,ones(length(d),1)*exp(noise)*1e6,'b')
+hold on
+plot([1:length(d)]',res(:,1)*1e6,'*-r'); % the optimized arrival time
+xlabel('Source-Receiver Pair Number') % here the label is not clear it is the diffracted SR pick
+ylabel('Arrival Time (\mu s)')
+legend('real arrival time','calculated arrival time')
+hold on
+title(['Seq ' num2str(seqnb)])
 
 
 
