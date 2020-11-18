@@ -27,9 +27,12 @@ classdef Transducers
     
     properties (Dependent)
         
-        n_transducers;
-        n_sources;
-        n_receivers;
+        n_transducers; % number of transducers
+        n_sources;   % number of sources 
+        n_receivers; % number of receivers
+        
+        xyz_position; % arrays containing the position of the transducers in the block coordinate system
+                       % origin at SWB corner
         
     end
     
@@ -37,6 +40,7 @@ classdef Transducers
         
         % constructor
         function obj = Transducers(serial,type,channel,platten,loc_id,orient)
+            %
             % put checks on all vectors length !!!
             if ~isequal(length(serial),length(type),length(channel),length(platten),length(loc_id),length(orient))
                 fprintf('\nError: properties should all have the same length!\n');
@@ -100,6 +104,7 @@ classdef Transducers
         function val = get.n_receivers(obj)
             val = length(find(obj.type=='R'));
         end
+        
         
         % METHODS
         % calculate global coordinates (in block reference) of each transducer

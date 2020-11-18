@@ -1,3 +1,5 @@
+./my_Tests/
+.DS_Store
 # Windows default autosave extension
 *.asv
 
