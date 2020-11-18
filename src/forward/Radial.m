@@ -1,7 +1,8 @@
-% Class for an ellipse
+% Class for a radial geometry
 % 
-% Brice Lecampion 
-classdef Ellipse
+% corrected from Ellipse.m
+% Dong Liu -- 21/09/2019
+classdef Radial
     
     properties
         
@@ -10,15 +11,13 @@ classdef Ellipse
         yc;
         zc;
         
-        % major and minor axis
-        a;
-        b;
-        
+        % radius
+        r;
+
         % euler angles
-        Ealpha;
+        %Ealpha;% equals to 0, in the case of the radial shape
         Ebeta;
         Egamma;
-        
         
     end
     
@@ -33,65 +32,68 @@ classdef Ellipse
     methods
         
         % constructor
-        function obj=Ellipse(a,b, XYZ_c,Ealpha,Ebeta,Egamma)
+        function obj=Radial(r, XYZ_c,Ebeta,Egamma)
             
-            %  if a>=b
-            obj.a=exp(a); % adaption for ln(a)
-            obj.b=exp(b); % adaption for ln(b)
-            %             else
-            %                 obj.a=b;
-            %                 obj.b=a;
-            %             end
+            obj.r=exp(r);% adaption for ln(r)
             
             obj.xc=XYZ_c(1);
             obj.yc=XYZ_c(2);
             obj.zc=XYZ_c(3);
+            % obj.alpha=0; % this is always true
             
-            obj.Ealpha=Ealpha;
             obj.Ebeta=Ebeta;
             obj.Egamma=Egamma;
             
         end
         
         % Rotation matrix
-        function EulerRot=get.EulerRot(obj)
+        function EulerRot=get.EulerRot(obj)      
             
-            EulerRot = [cos(obj.Ealpha)*cos(obj.Egamma)-cos(obj.Ebeta)*sin(obj.Ealpha)*sin(obj.Egamma),...
-                -cos(obj.Ealpha)*sin(obj.Egamma)-cos(obj.Ebeta)*cos(obj.Egamma)*sin(obj.Ealpha),...
-                sin(obj.Ealpha)*sin(obj.Ebeta);...
-                cos(obj.Egamma)*sin(obj.Ealpha)+cos(obj.Ealpha)*cos(obj.Ebeta)*sin(obj.Egamma),...
-                cos(obj.Ealpha)*cos(obj.Ebeta)*cos(obj.Egamma)-sin(obj.Ealpha)*sin(obj.Egamma),...
-                -cos(obj.Ealpha)*sin(obj.Ebeta);...
+            EulerRot = [cos(obj.Egamma),...
+                -sin(obj.Egamma),...
+                0;...
+                cos(obj.Ebeta)*sin(obj.Egamma),...
+                cos(obj.Ebeta)*cos(obj.Egamma),...
+                -sin(obj.Ebeta);...
                 sin(obj.Ebeta)*sin(obj.Egamma), cos(obj.Egamma)*sin(obj.Ebeta), cos(obj.Ebeta)];
+            
+            
+%             EulerRot = [cos(obj.Ealpha),...
+%                -cos(obj.Ebeta)*sin(obj.Ealpha),...
+%                 sin(obj.Ealpha)*sin(obj.Ebeta);...
+%                 sin(obj.Ealpha),...
+%                 cos(obj.Ealpha)*cos(obj.Ebeta),...
+%                 -cos(obj.Ealpha)*sin(obj.Ebeta);...
+%                 0, sin(obj.Ebeta), cos(obj.Ebeta)];
         end
         
         
-        % Get points on Ellipse
-        function [Elli_pts]=PointsOnEllipse(obj,npts)
+        % Get points on Radial
+        function [Raidal_pts]=PointsOnRadial(obj,npts)
             t=linspace(0.,2*pi,npts+1);
             t=t(1:end-1);
             
-            Elli_pts = [obj.a*cos(t);  obj.b*sin(t);  0.*t];
+            Raidal_pts = [obj.r*cos(t);  obj.r*sin(t);  0.*t];
             
             % rotate
-            Elli_pts =( [obj.xc+0.*t; obj.yc+0.*t; obj.zc+0.*t]+(obj.EulerRot*Elli_pts) )';
+            Raidal_pts =( [obj.xc+0.*t; obj.yc+0.*t; obj.zc+0.*t]+(obj.EulerRot*Raidal_pts) )';
             
         end
         
-        % get normal to ellipse
+        % get normal to radial
         function [En]=Normal(obj)
             t=[0.,pi/2.];
-            Elli_pts =[obj.a*cos(t);  obj.b*sin(t);  0.*t];
+            Radial_pts =[obj.r*cos(t);  obj.r*sin(t);  0.*t];
             
-            Elli_pts =( [obj.xc+0.*t; obj.yc+0.*t; obj.zc+0.*t]+(obj.EulerRot*Elli_pts) )';
+            Radial_pts =( [obj.xc+0.*t; obj.yc+0.*t; obj.zc+0.*t]+(obj.EulerRot*Radial_pts) )';
             
             
-            En = cross(Elli_pts(1,:),Elli_pts(2,:));
+            En = cross(Radial_pts(1,:),Radial_pts(2,:));
             En=En/norm(En);
         end
         
-        % plot Ellipse
-        function [fig_handle]=plotEllipse(obj,varargin)
+        % plot Radial
+        function [fig_handle]=plotRadial(obj,varargin)
             
             narg = length(varargin);
             pl_style='r-';
@@ -120,9 +122,9 @@ classdef Ellipse
             hold on
             
             %---
-            [Elli_pts]=PointsOnEllipse(obj,120); % discretizing the ellipse with 120 pts
+            [Radial_pts]=PointsOnRadial(obj,120); % discretizing the ellipse with 120 pts
             
-            plot3(Elli_pts(:,1),Elli_pts(:,2),Elli_pts(:,3),pl_style,'LineWidth',3);
+            plot3(Radial_pts(:,1),Radial_pts(:,2),Radial_pts(:,3),pl_style,'LineWidth',3);
             
             
         end

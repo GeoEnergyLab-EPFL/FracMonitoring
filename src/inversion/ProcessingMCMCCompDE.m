@@ -1,4 +1,4 @@
-function [MPost,Ctilde_all,R_cor_all,W]=ProcessingMCMC(accept,PXf,Xf,k_o,stab,n_resampling,fpost)
+function [MPost,Ctilde_all,R_cor_all,W]=ProcessingMCMCCompDE(accept,PXf,Xf,k_o,stab,n_resampling,mpostde,sigpostde,fpost)
 %
 %  perform diagnostic on MCMC results
 %  
@@ -111,6 +111,19 @@ meanX=MPost(:,1);
 Ctilde=Ctilde_app(:,:,1);
 rho=rho_all(:,:,1);
 
+
+%%% the results from the DE algorithm
+meanXD=mpostde;
+[CtildeD]=Posterior_Covariance_Matrix_ellipse(mpostde);
+rhoD=CtildeD;
+for i=1:q
+    for j=1:q
+            rhoD(i,j)=CtildeD(i,j)/sqrt(CtildeD(i,i)*CtildeD(j,j));
+    end
+end
+
+
+
 handler_histm=figure('Name',' Histogram of model parameters from MCMC' ,'DefaultAxesFontSize',18);
 %set(gcf,'Position',[100 100 900 600]); % set the figure size;
 set(gcf, 'Units', 'Inches', 'Position', [0, 0, 16, 8], 'PaperUnits', 'Inches', 'PaperSize', [16, 8])
@@ -120,13 +133,13 @@ set(gcf, 'Units', 'Inches', 'Position', [0, 0, 16, 8], 'PaperUnits', 'Inches', '
 for i=1:q
     subplot(2,q/2,i); % this is only suitable for the case of 8 and 6.
 
-%    x = linspace(min(Xsp(:,i)),max(Xsp(:,i)),100);
-%    norm2 = normpdf(x,meanX(i),Ctilde(i,i)^0.5);
+    x = linspace(min(Xsp(:,i)),max(Xsp(:,i)),100);
+    norm2 = normpdf(x,meanX(i),Ctilde(i,i)^0.5);
     [Nh,Xh]=hist(Xsp(:,i),60);
     Bh=bar(Xh,Nh,'facecolor',clr3);
     hold on;
-%    plot(x,norm2,'r-');
-%    hold on; 
+    plot(x,norm2,'r-');
+    hold on; 
     
     if q>=4 && q<=8
             title([' Hist of  ',strings_m{i}]); %, ' mu: ', num2str(mpost(i))    
@@ -161,7 +174,7 @@ for i=1:q
         subplot(ng,ng,kj);
         pointcolor=plot(Xsp(:,i),Xsp(:,j),'.');hold on;
         set(pointcolor,'color',clr3);
-        plot(meanX(i),meanX(j),'.r' ); hold on;
+        plot(meanX(i),meanX(j),'.k' ); hold on;
         
         %         % Draw confidence ellipse from Covariance matrix from chain
         Raux=[1  R_cor(i,j);
@@ -171,18 +184,20 @@ for i=1:q
         aux(1,:)=aux(1,:)*2*sqrt(CC(i,i));   % 3 sigma
         aux(2,:)=aux(2,:)*2*sqrt(CC(j,j));
         
-        plot(aux(1,:)+meanX(i) ,aux(2,:)+meanX(j),'k','LineWidth',1.5); hold on;
+        plot(aux(1,:)+meanX(i) ,aux(2,:)+meanX(j),'Color',clr0,'LineWidth',1.5); hold on;
         
-                 % Draw confidence ellipse from Covariance matrix from   Ctilde ::
+                 % Draw confidence ellipse from Covariance matrix from   Ctilde from DE algorithm::
         %
-                 Raux=[1  rho(i,j);
-                     rho(i,j)  1; ];
+                 Raux=[1  rhoD(i,j);
+                     rhoD(i,j)  1; ];
         %
                  aux=Raux*myX';
-                 aux(1,:)=aux(1,:)*2.*sqrt(Ctilde(i,i));
-                 aux(2,:)=aux(2,:)*2.*sqrt(Ctilde(j,j));
+                 aux(1,:)=aux(1,:)*2.*sqrt(CtildeD(i,i));
+                 aux(2,:)=aux(2,:)*2.*sqrt(CtildeD(j,j));
+                 
+                 plot(meanXD(i),meanXD(j),'.b' ); hold on;
         %
-                 plot(aux(1,:)+meanX(i) ,aux(2,:)+meanX(j),'b','LineWidth',1.5); hold on;
+                 plot(aux(1,:)+meanXD(i) ,aux(2,:)+meanXD(j),'Color',clr4,'LineWidth',1.5); hold on;
         %
         if q>=4 && q<=8
             title([strings_m{i},'  vs  ',strings_m{j}]);
@@ -191,8 +206,6 @@ for i=1:q
         end
     end
 end
-
-
 
 
 %saveas(handler_histpost, 'HistogramOfLogPosterior.fig', 'fig');

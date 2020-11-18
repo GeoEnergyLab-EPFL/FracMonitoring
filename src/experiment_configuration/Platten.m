@@ -207,6 +207,62 @@ classdef Platten
             text(letterIDpos(1),letterIDpos(2),letterIDpos(3),obj.id)
         end
         
+        
+        % Dong Liu -- 16/09/2019
+        % plot platten geometry in 2D for one face of the block 
+        function fig_handle = plattenplot2Dside(obj,sidemarker,varargin)
+            % compute 3D locations
+            xyz_loc = (obj.R*[obj.xy_holes(:,1), obj.xy_holes(:,2),...
+                zeros(size(obj.xy_holes(:,1)))]')'+obj.offset;
+            
+            % get hole numbering
+            holetxt = cellstr(num2str((0:(obj.n_holes-1))'));
+            
+            % open figure from passed handle if it exists
+            if ~isempty(varargin)
+                if isgraphics(varargin{1})
+                    fig_handle = figure(varargin{1});
+                else
+                    fig_handle = figure;
+                end
+            else
+                fig_handle = figure;
+            end
+            hold on
+            % plot location of transducer holes for platten object
+            switch sidemarker
+                case 'N'
+                    i=1;
+                    j=3;
+                case 'S'
+                    i=1;
+                    j=3;
+                case 'E'
+                    i=2;
+                    j=3;
+                case 'W'
+                    i=2;
+                    j=3;
+                case 'T'
+                    i=1;
+                    j=2;
+                case 'B'
+                    i=1;
+                    j=2;
+                otherwise
+                    disp('Wrong input for side indicator')
+                    return;
+            end
+            plot(xyz_loc(:,i),xyz_loc(:,j),'ok')
+            
+            %text(xyz_loc(:,i),xyz_loc(:,j),holetxt)
+            
+            % add platten letter ID in top-left corner of outer platten
+            % face (as is physically stamped)
+            %letterIDpos = [0.24,0.24]';
+            %text(letterIDpos(1),letterIDpos(2),obj.id)
+        end
+        
     end
     
 end

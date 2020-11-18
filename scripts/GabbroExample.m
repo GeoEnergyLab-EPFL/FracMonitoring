@@ -44,7 +44,7 @@ datafold = [num2str(datayear,'%02d') '-' num2str(datamonth,'%02d') '-' ...
 fjson = [datapath datafold num2str(starttime) '.json'];
 [jsonhdr,myTransducers,myPlattens,myBlock] = load_header(fjson);
 
-
+%%
 % read active acoustic parameters from JSON header
 ActiveAcoustic = jsonhdr.ActiveAcousticInfos;
 % extract relevant parameters
@@ -56,7 +56,6 @@ dt = 1/Fs;  % time step
 t0 = 0;     % initial time
 T = t0+dt*linspace(0,np-1,np)'; % time vector
 Fn = 0.5*Fs;    % Nyquist frequency (Hz)
-
 
 
 %%  read acoustic data from tge binary file 

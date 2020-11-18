@@ -157,6 +157,7 @@ if nargin<11, strategy = 7; else
 if nargin<12, refresh = 10; else
   if length(refresh)~=1; err(1,length(err)+1)=12; end; end; 
 if length(err)>0
+  disp(err);
   fprintf(stdout,'error in parameter %d\n', err);
   usage('devec3 (string,scalar,scalar,vector,vector,any,integer,integer,scalar,scalar,integer,integer)');    	
 end

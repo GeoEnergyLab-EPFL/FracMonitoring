@@ -1,4 +1,4 @@
-function [mpost]=minusPosteriorPDF(m)
+function [zpost]=minusPosteriorPDF(z)
  % wrapper to compute -Log Posterior PDF
  % note that d prior  must be declared as global variable
  % as well as Solid (solid properties object)  SRPairs (source receivers pairs)
@@ -6,11 +6,16 @@ function [mpost]=minusPosteriorPDF(m)
  %
  %
  global prior ;
+ global d;
+    % both for the the radial and ellipse case
     
-    mL=minusLikelihoodEllipseDiff(m); % compute -Log Likelihood
+    % the model parameters only cover part of the vector m
+    zL=minusLikelihoodEllipseDiff(z); % compute -Log Likelihood
     
-    mP=minusLogPrior(prior,m);% compute -Log Prior pdf
+    zP=minusLogPrior(prior,z);% compute -Log Prior pdf
     
-    mpost=mL+mP;
+    znoise=z(length(z)).*length(d);
+    
+    zpost=zL+zP+znoise;
     
 end
