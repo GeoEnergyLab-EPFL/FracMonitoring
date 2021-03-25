@@ -13,7 +13,7 @@ home
 
 % data storage location 
 % note here use 'gel-nas1' -  
-datastor = 'gel-nas1'; % 'local'; 'local' if dataset copied to local drive, 'gel-nas1', or 'enacdrives'
+datastor ='local'; 'gel-nas1'; % 'local'; 'local' if dataset copied to local drive, 'gel-nas1', or 'enacdrives'
 
 %% choose dataset and load acquisition times
 switch datastor
